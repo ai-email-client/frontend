@@ -4,49 +4,43 @@ import AppSidebar from '../components/AppSidebar.vue'
 import EmailList from '../components/EmailList.vue'
 import { Sun, Moon, Clock, Tag, MoreHorizontal, Reply, Forward, Star, Trash2, Archive } from 'lucide-vue-next'
 
-// --- State ---
 const darkMode = ref(false)
 const sidebarCollapsed = ref(false)
 const selectedEmailId = ref<number | null>(1)
 
-// --- Mock Data (ตามไฟล์ต้นฉบับ) ---
 const emails = ref([
   {
     id: 1,
     from: 'Sarah Chen',
     subject: 'Q4 Planning Discussion',
-    preview: 'Hi team, I wanted to discuss our Q4 roadmap and align on priorities...',
+    snippet: 'Hi team, I wanted to discuss our Q4 roadmap and align on priorities...',
     body: 'Hi team,<br><br>I wanted to discuss our Q4 roadmap and align on priorities before the upcoming all-hands meeting. We need to finalize the budget allocation and resource planning.<br><br>Key points to discuss:<br>- New feature timeline<br>- Marketing budget<br>- Hiring plan<br><br>Let me know your availability.',
     time: '10:30 AM',
     unread: true,
-    starred: false,
     tag: 'work'
   },
   {
     id: 2,
     from: 'Design Weekly',
     subject: 'Your weekly inspiration digest',
-    preview: 'Discover the best design work from around the web this week...',
+    snippet: 'Discover the best design work from around the web this week...',
     body: 'Here is your weekly dose of design inspiration.',
     time: '9:15 AM',
     unread: true,
-    starred: true,
     tag: 'newsletter'
   },
   {
     id: 3,
     from: 'Marcus Rodriguez',
     subject: 'Re: Project Timeline Update',
-    preview: 'Thanks for the update. The timeline looks good, just one question about...',
+    snippet: 'Thanks for the update. The timeline looks good, just one question about...',
     body: 'Thanks for the update.',
     time: 'Yesterday',
     unread: false,
-    starred: false,
     tag: 'work'
   }
 ])
 
-// Computed: หาอีเมลที่เลือก
 const selectedEmail = computed(() => emails.value.find(e => e.id === selectedEmailId.value))
 
 function toggleDarkMode() {
@@ -111,7 +105,9 @@ function toggleDarkMode() {
                   <div class="font-semibold text-lg" :class="darkMode ? 'text-white' : 'text-gray-900'">
                     {{ selectedEmail.from }}
                   </div>
-                  <div class="text-sm text-gray-500">to me</div>
+                  <div class="font-semibold text-m" :class="darkMode ? 'text-white' : 'text-gray-500'">
+                    to me
+                  </div>
                 </div>
               </div>
             </div>
@@ -129,7 +125,7 @@ function toggleDarkMode() {
 
           <div 
             class="prose max-w-none mb-12"
-            :class="darkMode ? 'prose-invert text-gray-300' : 'text-gray-700'"
+            :class="darkMode ? 'prose-invert text-white' : 'text-gray-900'"
             v-html="selectedEmail.body"
           ></div>
 

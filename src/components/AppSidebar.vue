@@ -17,23 +17,23 @@ defineEmits(['toggleCollapse'])
     ]"
   >
     <div class="p-6 flex items-center justify-between">
-      <div v-if="!collapsed" class="flex items-center gap-3 font-bold text-xl transition-opacity duration-300">
-        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-          <Mail :size="18" />
+      <div v-if="!collapsed" class="flex items-center gap-2 font-bold text-xl transition-opacity duration-300">
+        <div class="p-1.5 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+          <Mail :size="26" />
         </div>
         <span :class="darkMode ? 'text-white' : 'text-gray-900'">ZenMail</span>
       </div>
-      <div v-else class="mx-auto w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-        <Mail :size="18" />
+      <div v-else class="p-1.5 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+        <Mail :size="26" />
       </div>
 
       <button 
         @click="$emit('toggleCollapse')"
         class="p-1.5 rounded-lg hover:bg-gray-200/20 transition-colors"
-        :class="{ 'mx-auto mt-4': collapsed }"
+        :class="{ 'p-1.5': collapsed }"
       >
-        <ChevronRight v-if="collapsed" :size="16" />
-        <ChevronLeft v-else :size="16" />
+        <ChevronRight v-if="collapsed" :size="18" />
+        <ChevronLeft v-else :size="18" />
       </button>
     </div>
 

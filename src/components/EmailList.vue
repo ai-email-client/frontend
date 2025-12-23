@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Search, Star, PenSquare } from 'lucide-vue-next'
+import { Search, PenSquare } from 'lucide-vue-next'
+import { Email } from '../interface/email'
 
-// Props และ Emits เพื่อคุยกับหน้าหลัก
 defineProps<{
-  emails: any[],
+  emails: Email[],
   selectedId: number | null,
   darkMode: boolean
 }>()
@@ -54,7 +54,7 @@ defineEmits(['select'])
               email.unread ? (darkMode ? 'text-white' : 'text-gray-900') : 'text-gray-500'
             ]"
           >
-            {{ email.from }}
+            {{ email.sender }}
           </span>
           <span class="text-xs text-gray-500 whitespace-nowrap">{{ email.time }}</span>
         </div>
@@ -69,7 +69,7 @@ defineEmits(['select'])
           {{ email.subject }}
         </h3>
         
-        <p class="text-xs text-gray-500 line-clamp-2 mb-2">{{ email.preview }}</p>
+        <p class="text-xs text-gray-500 line-clamp-2 mb-2">{{ email.snippet }}</p>
         
         <div class="flex items-center gap-2">
           <span 
@@ -81,11 +81,11 @@ defineEmits(['select'])
           >
             {{ email.tag }}
           </span>
-          <Star 
+          <!-- <Star 
             v-if="email.starred" 
             :size="14" 
             class="ml-auto fill-yellow-400 text-yellow-400" 
-          />
+          /> -->
         </div>
       </div>
     </div>
