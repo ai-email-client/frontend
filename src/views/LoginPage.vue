@@ -2,9 +2,8 @@
 </script>
 
 <template>
-  <router-view></router-view>
+    <h1>Login Page</h1>
 </template>
 
-<style>
-/* CSS Global */
+<style scoped>
 </style>
