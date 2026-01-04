@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-
 const router = useRouter()
 const route = useRoute()
 
-const BACKEND_AUTH_URL = 'http://localhost:8000/auth/login/gmail'
 const isLoading = ref(false)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function handleGoogleLogin() {
   isLoading.value = true
-  window.location.href = BACKEND_AUTH_URL
+  window.location.href = `${API_URL}/auth/login/gmail`
 }
 
 onMounted(() => {
-    console.log(route.query)
     const access_token = route.query.access_token as string
     const refresh_token = route.query.refresh_token as string
 
