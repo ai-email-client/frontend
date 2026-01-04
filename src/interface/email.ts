@@ -1,12 +1,19 @@
+export interface Attachment {
+    filename: string
+    mimeType: string
+    size: number
+    attachmentId: string | null
+}
+
 export interface Email {
-    id: number
+    id: string
     subject: string
     sender: string
     snippet: string
     body: string
-    time: Date
-    unread: boolean
-    tag?: string
+    time: string
+    tag: string[]
+    attachments: Attachment[]
 }
 
 export interface EmailList {
@@ -14,8 +21,15 @@ export interface EmailList {
 }
 
 export interface EmailShortDetail {
-    id: number
+    id: string
     subject: string
     sender: string
     snippet: string
+    time: string
+    tag: string[]
+    attachments: Attachment[]
+}
+
+export interface EmailShortList {
+    emails: EmailShortDetail[]
 }

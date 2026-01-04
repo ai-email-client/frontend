@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Search, PenSquare } from 'lucide-vue-next'
-import { Email } from '../interface/email'
+import { EmailShortDetail } from '../interface/email'
 
 defineProps<{
-  emails: Email[],
-  selectedId: number | null,
+  emails: EmailShortDetail[],
+  selectedId: string | null,
   darkMode: boolean
 }>()
 
@@ -50,9 +50,6 @@ defineEmits(['select'])
         <div class="flex justify-between items-start mb-1">
           <span 
             class="font-semibold text-sm truncate pr-2"
-            :class="[
-              email.unread ? (darkMode ? 'text-white' : 'text-gray-900') : 'text-gray-500'
-            ]"
           >
             {{ email.sender }}
           </span>
@@ -61,32 +58,12 @@ defineEmits(['select'])
         
         <h3 
           class="text-sm mb-1 truncate"
-          :class="[
-            email.unread ? 'font-semibold' : 'font-normal',
-            darkMode ? 'text-gray-300' : 'text-gray-700'
-          ]"
+          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
         >
           {{ email.subject }}
         </h3>
         
         <p class="text-xs text-gray-500 line-clamp-2 mb-2">{{ email.snippet }}</p>
-        
-        <div class="flex items-center gap-2">
-          <span 
-            v-if="email.tag"
-            class="text-[10px] px-2 py-0.5 rounded-full font-medium"
-            :class="[
-              email.tag === 'work' ? 'bg-purple-100 text-purple-600' : 'bg-green-100 text-green-600'
-            ]"
-          >
-            {{ email.tag }}
-          </span>
-          <!-- <Star 
-            v-if="email.starred" 
-            :size="14" 
-            class="ml-auto fill-yellow-400 text-yellow-400" 
-          /> -->
-        </div>
       </div>
     </div>
   </div>

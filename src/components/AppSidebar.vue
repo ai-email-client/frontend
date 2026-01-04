@@ -40,7 +40,7 @@ defineEmits(['toggleCollapse'])
     <nav class="flex-1 px-4 space-y-2 mt-4">
       <div 
         v-for="(item, index) in [
-          { icon: Inbox, label: 'Inbox', badge: 12, active: true },
+          { icon: Inbox, label: 'Inbox', badge: 0, active: true },
           { icon: Star, label: 'Starred', badge: 0, active: false },
           { icon: Send, label: 'Sent', badge: 0, active: false },
           { icon: Archive, label: 'Archive', badge: 0, active: false },
