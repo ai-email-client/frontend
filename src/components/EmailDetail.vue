@@ -12,12 +12,15 @@ import {
   Download
 } from 'lucide-vue-next'
 import { Email } from '../interface/email'
+import { sanitizeHtml } from '../utils'
+import { computed } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   email: Email | null,
   loading: boolean,
   darkMode: boolean
 }>()
+
 defineEmits(['toggleDarkMode'])
 
 function formatSize(bytes: number) {
@@ -27,7 +30,9 @@ function formatSize(bytes: number) {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
-
+const safeContent = computed(() => {
+  return sanitizeHtml(props.email?.body)
+})
 </script>
 <template>
   <div class="h-16 border-b flex items-center justify-between px-6 shrink-0"
@@ -93,8 +98,8 @@ function formatSize(bytes: number) {
         </div>
       </div>
 
-      <div class="prose max-w-none mb-8" :class="darkMode ? 'prose-invert text-gray-200' : 'text-gray-800'">
-        <div v-html="email.body"></div>
+      <div class="prose max-w-none" :class="darkMode ? 'prose-invert' : ''">
+        <div class="email-content" v-html="safeContent"></div>
       </div>
 
       <div v-if="email.attachments && email.attachments.length > 0" class="mb-12 pt-6 border-t"

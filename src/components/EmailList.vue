@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, PenSquare } from 'lucide-vue-next'
+import { Search, PenSquare, Paperclip } from 'lucide-vue-next'
 import { EmailShortDetail } from '../interface/email'
 
 defineProps<{
@@ -12,43 +12,80 @@ defineEmits(['select'])
 </script>
 
 <template>
-  <div class="w-96 flex flex-col border-r h-full"
-    :class="darkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-200'">
+  <div class="w-96 flex flex-col border-r h-full transition-colors duration-300"
+    :class="darkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'">
+
     <div class="p-4 border-b" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'">Inbox</h2>
-        <button class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+        <button class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
           <PenSquare :size="18" />
         </button>
       </div>
       <div class="relative">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" :size="16" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
+          :class="darkMode ? 'text-gray-500' : 'text-gray-400'" :size="16" />
         <input type="text" placeholder="Search emails..."
           class="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm border focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-          :class="darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'" />
+          :class="darkMode
+            ? 'bg-gray-900 border-gray-800 text-gray-200 placeholder-gray-600 focus:bg-gray-900'
+            : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:bg-white'" />
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto custom-scrollbar">
+
       <div v-for="email in emails" :key="email.msg_id" @click="$emit('select', email.msg_id)"
-        class="p-4 border-b cursor-pointer transition-all hover:pl-5 group relative" :class="[
-          darkMode ? 'border-gray-800' : 'border-gray-100',
+        class="p-4 border-b border-l-4 cursor-pointer transition-all group relative" :class="[
+          // 1. Separator Line
+          darkMode ? 'border-b-gray-800' : 'border-b-gray-100',
+
+          // 2. Selection Logic
           selectedId === email.msg_id
-            ? (darkMode ? 'bg-blue-900/20 border-l-2 border-l-blue-500' : 'bg-blue-50 border-l-2 border-l-blue-500')
-            : 'hover:bg-gray-50/50'
+            ? (darkMode
+              ? 'bg-blue-500/10 border-l-blue-500'   // Dark: พื้นหลังฟ้าจางๆ
+              : 'bg-blue-50 border-l-blue-500'       // Light: พื้นหลังฟ้าอ่อน
+            )
+            : (darkMode
+              ? 'border-l-transparent hover:bg-gray-900' // Dark Hover
+              : 'border-l-transparent hover:bg-gray-50'  // Light Hover
+            )
         ]">
+
         <div class="flex justify-between items-start mb-1">
-          <span class="font-semibold text-sm truncate pr-2">
+          <span class="text-sm truncate pr-2 font-semibold transition-colors"
+            :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
             {{ email.sender }}
           </span>
-          <span class="text-xs text-gray-500 whitespace-nowrap">{{ email.time }}</span>
+          <span class="text-xs whitespace-nowrap transition-colors"
+            :class="darkMode ? 'text-gray-500' : 'text-gray-500'">
+            {{ email.time }}
+          </span>
         </div>
 
-        <h3 class="text-sm mb-1 truncate" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+        <h3 class="text-sm mb-1 truncate font-medium transition-colors duration-200" :class="selectedId === email.msg_id
+          ? 'text-blue-500 dark:text-blue-400'
+          : (darkMode ? 'text-gray-300' : 'text-gray-700')">
           {{ email.subject }}
         </h3>
 
-        <p class="text-xs text-gray-500 line-clamp-2 mb-2">{{ email.snippet }}</p>
+        <p class="text-xs line-clamp-2 mb-2 transition-colors" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+          {{ email.snippet }}
+        </p>
+
+        <div class="flex items-center justify-between mt-2 h-5">
+          <div></div>
+          <div v-if="email.attachments && email.attachments.length > 0"
+            class="flex-shrink-0 ml-2 truncate max-w-[150px] flex items-center gap-1 transition-colors"
+            :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
+            :title="email.attachments.map(a => a.filename).join(', ')">
+            <Paperclip :size="14" />
+            <span class="text-xs">
+              {{ email.attachments.length }} file(s)
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

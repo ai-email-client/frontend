@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
-html,
-body,
+
 #app {
-  height: 100vh;
-  width: 100vw;
+  height: auto;
+  width: auto;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -26,4 +25,19 @@ body,
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.8);
+}
+
+:deep(img) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+:deep(div) {
+  overflow-x: auto;
+}
+
+.email-content :deep(img) {
+  max-width: 100% !important;
+  height: auto !important;
 }

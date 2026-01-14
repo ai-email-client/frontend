@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Mail, Inbox, Send, Star, Archive, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import type { User } from '../interface/user'
 
 defineProps<{
+  user: User | null,
   collapsed: boolean,
   darkMode: boolean
 }>()
@@ -56,11 +58,12 @@ defineEmits(['toggleCollapse'])
       <div class="flex items-center gap-3">
         <div
           class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg">
-          JD
+
         </div>
         <div v-if="!collapsed" class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">John Doe</p>
-          <p class="text-xs truncate text-gray-500">john@example.com</p>
+          <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">{{ user?.name }}
+          </p>
+          <p class="text-xs truncate text-gray-500">{{ user?.email }}</p>
         </div>
         <button v-if="!collapsed" class="p-2 hover:bg-gray-200/20 rounded-lg">
           <Settings :size="18" />

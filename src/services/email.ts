@@ -1,5 +1,5 @@
 import api from './api'
-import type { Email, EmailShortDetail, EmailShortList, EmailSummary } from '../interface/email'
+import type { Email, EmailShortDetail, EmailSummary } from '../interface/email'
 
 export default {
     async getEmails() {
@@ -54,17 +54,14 @@ export default {
         }
     },
 
-    async getSummary(email_text: string, response_mode: string) {
+    async getSummary(email_text: string) {
         const accessToken = localStorage.getItem('access_token')
         const refreshToken = localStorage.getItem('refresh_token')
         if (!accessToken) throw new Error("No access token found")
         if (!refreshToken) throw new Error("No refresh token found")
 
         const payload = {
-            inputs: {
-                email_text: email_text
-            },
-            response_mode: response_mode
+            email_text: email_text
         }
         const response = await api.post<EmailSummary>('/email/summary', payload)
         return response.data
