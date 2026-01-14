@@ -37,18 +37,16 @@ defineEmits(['select'])
 
       <div v-for="email in emails" :key="email.msg_id" @click="$emit('select', email.msg_id)"
         class="p-4 border-b border-l-4 cursor-pointer transition-all group relative" :class="[
-          // 1. Separator Line
           darkMode ? 'border-b-gray-800' : 'border-b-gray-100',
 
-          // 2. Selection Logic
           selectedId === email.msg_id
             ? (darkMode
-              ? 'bg-blue-500/10 border-l-blue-500'   // Dark: พื้นหลังฟ้าจางๆ
-              : 'bg-blue-50 border-l-blue-500'       // Light: พื้นหลังฟ้าอ่อน
+              ? 'bg-blue-500/10 border-l-blue-500'
+              : 'bg-blue-50 border-l-blue-500'
             )
             : (darkMode
-              ? 'border-l-transparent hover:bg-gray-900' // Dark Hover
-              : 'border-l-transparent hover:bg-gray-50'  // Light Hover
+              ? 'border-l-transparent hover:bg-gray-900'
+              : 'border-l-transparent hover:bg-gray-50'
             )
         ]">
 

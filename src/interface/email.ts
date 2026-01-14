@@ -34,6 +34,7 @@ export interface Email {
     time: string
     tag: string[]
     attachments: Attachment[]
+    plain_text: string | null
 }
 
 export interface EmailList {

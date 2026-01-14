@@ -11,9 +11,11 @@ import {
   File,
   Download
 } from 'lucide-vue-next'
-import { Email } from '../interface/email'
+import { Email, EmailSummary } from '../interface/email'
 import { sanitizeHtml } from '../utils'
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import emailService from '../services/email'
+import Summary from './Summary.vue'
 
 const props = defineProps<{
   email: Email | null,
@@ -30,10 +32,34 @@ function formatSize(bytes: number) {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
+
 const safeContent = computed(() => {
   return sanitizeHtml(props.email?.body)
 })
+
+const isSummarizing = ref(false)
+const aiSummary = ref<EmailSummary | null>(null)
+
+watch(() => props.email, () => {
+  aiSummary.value = null
+  isSummarizing.value = false
+})
+
+const handleSummarize = async () => {
+  if (!props.email) return
+
+  try {
+    isSummarizing.value = true
+    const data = await emailService.getSummary(props.email?.plain_text || '')
+    aiSummary.value = data
+  } catch (err) {
+    console.error('Failed to summarize email', err)
+  } finally {
+    isSummarizing.value = false
+  }
+}
 </script>
+
 <template>
   <div class="h-16 border-b flex items-center justify-between px-6 shrink-0"
     :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
@@ -51,10 +77,22 @@ const safeContent = computed(() => {
           class="p-2 rounded-md shadow-sm transition-all hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
           <Star :size="18" />
         </button>
+
+        <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
+        <button @click="handleSummarize" :disabled="isSummarizing"
+          class="p-2 rounded-md shadow-sm transition-all flex items-center gap-2" :class="[
+            darkMode ? 'hover:bg-gray-700 text-purple-400' : 'hover:bg-white text-purple-600',
+            isSummarizing ? 'opacity-50 cursor-not-allowed' : ''
+          ]" title="Summarize with AI">
+          <div v-if="isSummarizing"
+            class="animate-spin h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+          <Sparkles v-else :size="18" />
+          <span v-if="!isSummarizing" class="text-xs font-bold">Summarize</span>
+        </button>
       </div>
     </div>
   </div>
-
   <div v-if="loading" class="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
     <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
     <span>Loading email content...</span>
@@ -97,7 +135,15 @@ const safeContent = computed(() => {
           </div>
         </div>
       </div>
+      <div v-if="aiSummary" class="mb-8 relative group">
+        <button @click="aiSummary = null"
+          class="absolute top-3 right-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors z-10"
+          title="Close Analysis">
+          <X :size="16" />
+        </button>
 
+        <Summary :data="aiSummary" :darkMode="darkMode" />
+      </div>
       <div class="prose max-w-none" :class="darkMode ? 'prose-invert' : ''">
         <div class="email-content" v-html="safeContent"></div>
       </div>

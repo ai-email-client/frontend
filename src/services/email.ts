@@ -54,16 +54,19 @@ export default {
         }
     },
 
-    async getSummary(email_text: string) {
+    async getSummary(plain_text: string) {
         const accessToken = localStorage.getItem('access_token')
         const refreshToken = localStorage.getItem('refresh_token')
         if (!accessToken) throw new Error("No access token found")
         if (!refreshToken) throw new Error("No refresh token found")
 
         const payload = {
-            email_text: email_text
+            email_text: plain_text
         }
-        const response = await api.post<EmailSummary>('/email/summary', payload)
+
+        const response = await api.post<EmailSummary>('/email/summary', payload, {
+            timeout: 120000
+        })
         return response.data
     }
 }
