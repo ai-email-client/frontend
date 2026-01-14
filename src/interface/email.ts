@@ -1,3 +1,23 @@
+
+
+export interface Sender {
+    name: string
+    type: string
+}
+
+export interface EmailSummary {
+    sender: Sender
+    email_category: string
+    date: string
+    time: string
+    location: string
+    instructions: string[]
+    required_items: string[]
+    summary: string
+    extraction_status: string
+    confidence: number
+}
+
 export interface Attachment {
     filename: string
     mimeType: string
@@ -6,7 +26,7 @@ export interface Attachment {
 }
 
 export interface Email {
-    id: string
+    msg_id: string
     subject: string
     sender: string
     snippet: string
@@ -21,7 +41,7 @@ export interface EmailList {
 }
 
 export interface EmailShortDetail {
-    id: string
+    msg_id: string
     subject: string
     sender: string
     snippet: string
@@ -32,4 +52,13 @@ export interface EmailShortDetail {
 
 export interface EmailShortList {
     emails: EmailShortDetail[]
+}
+
+enum Category {
+    SOCIAL = 'CATEGORY_SOCIAL',
+    FORUMS = 'CATEGORY_FORUMS',
+    PROMOTIONS = 'CATEGORY_PROMOTIONS',
+    UPDATES = 'CATEGORY_UPDATES',
+    PERSONAL = 'CATEGORY_PERSONAL',
+    IMPORTANT = 'CATEGORY_IMPORTANT'
 }
