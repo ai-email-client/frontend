@@ -29,7 +29,7 @@ import {
 } from '../interface/email'
 
 const props = defineProps<{
-  email: Email | null,
+  email: Email,
   loading: boolean,
   darkMode: boolean
 }>()
@@ -45,30 +45,56 @@ function formatSize(bytes: number) {
 }
 
 const safeContent = computed(() => {
-  return sanitizeHtml(props.email?.body)
+  return sanitizeHtml(props.email.body)
 })
 
 const isSummarizing = ref(false)
 const aiSummary = ref<EmailSummary | null>(null)
 
-watch(() => props.email, () => {
+const fetchAutoSummary = async (targetEmail: Email) => {
+  isSummarizing.value = true
   aiSummary.value = null
-  isSummarizing.value = false
-})
 
-const handleSummarize = async () => {
-  if (!props.email) return
+  if (!targetEmail) {
+    return
+  }
 
   try {
-    isSummarizing.value = true
-    const data = await emailService.getSummary(props.email?.plain_text || '')
-    aiSummary.value = data
-  } catch (err) {
-    console.error('Failed to summarize email', err)
+    let contentToSend = targetEmail.plain_text || targetEmail.body || ''
+    const MAX_LENGTH = 8000
+    if (contentToSend.length > MAX_LENGTH) {
+      contentToSend = contentToSend.substring(0, MAX_LENGTH) + '...[truncated]'
+    }
+
+    const response = await emailService.getSummary(contentToSend)
+
+    if (props.email.msg_id !== targetEmail.msg_id) {
+      console.log('Ignored stale summary response')
+      return
+    }
+
+    if (response) {
+      aiSummary.value = response
+    }
+
+  } catch (error) {
+    console.error('Auto-summary failed:', error)
   } finally {
-    isSummarizing.value = false
+    if (props.email.msg_id === targetEmail.msg_id) {
+      isSummarizing.value = false
+    }
   }
 }
+
+watch(() => props.email, (newEmail) => {
+  aiSummary.value = null
+  isSummarizing.value = false
+
+  if (newEmail) {
+    fetchAutoSummary(newEmail)
+  }
+}, { immediate: true })
+
 </script>
 
 <template>
@@ -91,15 +117,15 @@ const handleSummarize = async () => {
 
         <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
-        <button @click="handleSummarize" :disabled="isSummarizing"
+        <button @click="fetchAutoSummary(props.email)" :disabled="isSummarizing || !props.email"
           class="p-2 rounded-md shadow-sm transition-all flex items-center gap-2" :class="[
             darkMode ? 'hover:bg-gray-700 text-purple-400' : 'hover:bg-white text-purple-600',
-            isSummarizing ? 'opacity-50 cursor-not-allowed' : ''
+            isSummarizing || !props.email ? 'opacity-50 cursor-not-allowed' : ''
           ]" title="Summarize with AI">
           <div v-if="isSummarizing"
             class="animate-spin h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
           <Sparkles v-else :size="18" />
-          <span v-if="!isSummarizing" class="text-xs font-bold">Summarize</span>
+          <span v-if="!isSummarizing && props.email" class="text-xs font-bold">Summarize</span>
         </button>
       </div>
     </div>

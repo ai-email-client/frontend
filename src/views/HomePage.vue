@@ -59,6 +59,8 @@ watch(selectedEmailId, async (newId) => {
     isLoadingEmail.value = true
     const fullEmail = await emailService.getEmailById(newId)
     selectedEmail.value = fullEmail
+
+
   } catch (error) {
     console.error("Failed to fetch email details in HomePage.vue", error)
     selectedEmail.value = null
