@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { Search, PenSquare, Paperclip } from 'lucide-vue-next'
-import { EmailShortDetail } from '../interface/email'
+import {
+  Search,
+  PenSquare,
+  Paperclip,
+  RotateCw
+} from 'lucide-vue-next'
+
+import {
+  EmailShortDetail
+} from '../interface/email'
 
 defineProps<{
   emails: EmailShortDetail[],
   selectedId: string | null,
-  darkMode: boolean
+  darkMode: boolean,
+  loading: boolean
 }>()
 
-defineEmits(['select'])
+defineEmits(['select', 'refresh'])
 </script>
 
 <template>
@@ -17,8 +26,13 @@ defineEmits(['select'])
 
     <div class="p-4 border-b" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
       <div class="flex items-center justify-between mb-4">
+        <button @click="$emit('refresh')" :disabled="loading" class="p-2 rounded-full hover:bg-gray-100 transition-all"
+          title="Refresh">
+          <RotateCw :size="18" :class="{ 'animate-spin': loading }" />
+        </button>
         <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'">Inbox</h2>
-        <button class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
+        <button @click="$emit('refresh')" :disabled="loading"
+          class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
           <PenSquare :size="18" />
         </button>
       </div>

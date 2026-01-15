@@ -1,5 +1,17 @@
 <script setup lang="ts">
 import {
+  sanitizeHtml
+} from '../utils'
+
+import {
+  computed,
+  ref,
+  watch
+} from 'vue';
+
+import emailService from '../services/email'
+import Summary from './Summary.vue'
+import {
   Reply,
   Forward,
   Archive,
@@ -11,11 +23,10 @@ import {
   File,
   Download
 } from 'lucide-vue-next'
-import { Email, EmailSummary } from '../interface/email'
-import { sanitizeHtml } from '../utils'
-import { computed, ref, watch } from 'vue';
-import emailService from '../services/email'
-import Summary from './Summary.vue'
+import {
+  Email,
+  EmailSummary
+} from '../interface/email'
 
 const props = defineProps<{
   email: Email | null,

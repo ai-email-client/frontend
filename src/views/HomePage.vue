@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import {
+  ref,
+  watch,
+  onMounted
+} from 'vue'
+
 import AppSidebar from '../components/AppSidebar.vue'
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
-import { EmailShortDetail } from '../interface/email'
+
+import {
+  EmailShortDetail
+} from '../interface/email'
+
 import emailService from '../services/email'
 
 const darkMode = ref(false)
 const sidebarCollapsed = ref(false)
 
 const loading = ref(false)
-const error = ref('')
 
 const emails = ref<EmailShortDetail[]>([])
 const selectedEmailId = ref<string | null>(null)
@@ -18,21 +26,28 @@ const selectedEmailId = ref<string | null>(null)
 const selectedEmail = ref<any | null>(null)
 const isLoadingEmail = ref(false)
 
-onMounted(async () => {
+const page_token = ref<string | null>(null)
+
+const fetchEmails = async () => {
   try {
     loading.value = true
+
+    selectedEmail.value = null
+    selectedEmailId.value = null
     const data = await emailService.getEmails()
-    console.log(data)
-    emails.value = data
-    if (data.length >= 0) {
-      selectedEmailId.value = data[0].msg_id
+    emails.value = data.emails
+    page_token.value = data.page_token
+
+    if (data.emails.length >= 0) {
+      selectedEmailId.value = data.emails[0].msg_id
     }
+
   } catch (err) {
-    error.value = 'Server Down'
+    console.error(err)
   } finally {
     loading.value = false
   }
-})
+}
 
 watch(selectedEmailId, async (newId) => {
   if (!newId) {
@@ -45,13 +60,20 @@ watch(selectedEmailId, async (newId) => {
     const fullEmail = await emailService.getEmailById(newId)
     selectedEmail.value = fullEmail
   } catch (error) {
-    console.error("Failed to fetch email details", error)
+    console.error("Failed to fetch email details in HomePage.vue", error)
     selectedEmail.value = null
+    throw error
   } finally {
     isLoadingEmail.value = false
   }
 })
+onMounted(() => {
+  fetchEmails()
+})
 
+const onRefresh = () => {
+  fetchEmails()
+}
 </script>
 
 <template>
@@ -65,18 +87,14 @@ watch(selectedEmailId, async (newId) => {
       <header class="h-16 flex items-center justify-between px-6 border-b shrink-0 z-10"
         :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'">
         <div class="flex items-center gap-4">
-          <button @click="$emit('toggleDarkMode')"
-            class="p-2 rounded-full hover:bg-gray-200 transition-colors text-gray-600 dark:text-gray-300"
-            :class="darkMode ? 'hover:bg-gray-800' : ''">
 
-          </button>
         </div>
       </header>
 
       <div class="flex flex-1 overflow-hidden relative">
 
-        <EmailList :emails="emails" :selectedId="selectedEmailId" :darkMode="darkMode"
-          @select="(id) => selectedEmailId = id" />
+        <EmailList :emails="emails" :selectedId="selectedEmailId" :darkMode="darkMode" :loading="loading"
+          @select="(id) => selectedEmailId = id" @refresh="onRefresh" />
 
         <div
           class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"

@@ -10,8 +10,12 @@ import {
     AlertTriangle,
     User
 } from 'lucide-vue-next'
-import { computed } from 'vue'
-import { EmailSummary } from '../interface/email';
+import {
+    computed
+} from 'vue'
+import {
+    EmailSummary
+} from '../interface/email';
 
 
 const props = defineProps<{

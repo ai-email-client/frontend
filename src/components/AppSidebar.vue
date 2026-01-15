@@ -1,5 +1,16 @@
 <script setup lang="ts">
-import { Mail, Inbox, Send, Star, Archive, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import {
+  Mail,
+  Inbox,
+  Send,
+  Star,
+  Archive,
+  Trash2,
+  Settings,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-vue-next'
+
 import type { User } from '../interface/user'
 
 defineProps<{

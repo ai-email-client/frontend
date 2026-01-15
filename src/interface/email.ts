@@ -53,4 +53,5 @@ export interface EmailShortDetail {
 
 export interface EmailShortList {
     emails: EmailShortDetail[]
+    page_token: string
 }
