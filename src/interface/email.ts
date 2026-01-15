@@ -1,4 +1,4 @@
-
+import { EmailCategory } from "../interface/category"
 
 export interface Sender {
     name: string
@@ -7,7 +7,7 @@ export interface Sender {
 
 export interface EmailSummary {
     sender: Sender
-    email_category: string
+    email_category: EmailCategory
     date: string
     time: string
     location: string
@@ -53,13 +53,4 @@ export interface EmailShortDetail {
 
 export interface EmailShortList {
     emails: EmailShortDetail[]
-}
-
-enum Category {
-    SOCIAL = 'CATEGORY_SOCIAL',
-    FORUMS = 'CATEGORY_FORUMS',
-    PROMOTIONS = 'CATEGORY_PROMOTIONS',
-    UPDATES = 'CATEGORY_UPDATES',
-    PERSONAL = 'CATEGORY_PERSONAL',
-    IMPORTANT = 'CATEGORY_IMPORTANT'
 }

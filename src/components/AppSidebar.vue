@@ -20,7 +20,7 @@ defineEmits(['toggleCollapse'])
         <div class="p-1.5 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
           <Mail :size="26" />
         </div>
-        <span :class="darkMode ? 'text-white' : 'text-gray-900'">ZenMail</span>
+        <span :class="darkMode ? 'text-white' : 'text-gray-900'">Hermes</span>
       </div>
       <div v-else class="p-1.5 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
         <Mail :size="26" />
