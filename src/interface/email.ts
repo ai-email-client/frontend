@@ -30,11 +30,11 @@ export interface Email {
     subject: string
     sender: string
     snippet: string
-    body: string
+    html: string | null
+    plain_text: string | null
     time: string
     tag: string[]
     attachments: Attachment[]
-    plain_text: string | null
 }
 
 export interface EmailList {

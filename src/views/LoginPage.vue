@@ -9,15 +9,17 @@ import {
   useRoute
 } from 'vue-router'
 
+import auth from '../api/auth'
+
 const router = useRouter()
 const route = useRoute()
 
 const isLoading = ref(false)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-function handleGoogleLogin() {
+async function handleGoogleLogin() {
   isLoading.value = true
-  window.location.href = `${API_URL}/auth/login/gmail`
+  const response = await auth.loginByGoogle()
+  window.location.href = response.url
 }
 
 onMounted(() => {
@@ -28,7 +30,7 @@ onMounted(() => {
     localStorage.setItem('access_token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
 
-    router.push('/home')
+    router.push('/inbox')
   }
 })
 </script>

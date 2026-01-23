@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
-  sanitizeHtml
+  sanitizeHtml,
+  formatSize,
+  downloadAttachment
 } from '../utils'
 
 import {
@@ -9,24 +11,18 @@ import {
   watch
 } from 'vue';
 
-import emailService from '../services/email'
-import Summary from './Summary.vue'
+// import emailService from '../services/email'
+// import Summary from './Summary.vue'
 import {
-  Reply,
-  Forward,
-  Archive,
-  Trash2,
-  Star,
-  Clock,
-  Tag,
-  Paperclip,
-  File,
-  Download
+  Reply, Forward, Archive, Trash2,
+  Star, Clock, Tag, Paperclip,
+  File, Download, FileCode, FileText
 } from 'lucide-vue-next'
 import {
   Email,
-  EmailSummary
 } from '../interface/email'
+
+import EmailShadow from './EmailShadow.vue'
 
 const props = defineProps<{
   email: Email,
@@ -36,63 +32,31 @@ const props = defineProps<{
 
 defineEmits(['toggleDarkMode'])
 
-function formatSize(bytes: number) {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
 
-const safeContent = computed(() => {
-  return sanitizeHtml(props.email.body)
+const showHtml = ref(true)
+
+const hasHtml = computed(() => {
+  return !!props.email?.html && props.email.html.trim().length > 0
 })
 
-const isSummarizing = ref(false)
-const aiSummary = ref<EmailSummary | null>(null)
-
-const fetchAutoSummary = async (targetEmail: Email) => {
-  isSummarizing.value = true
-  aiSummary.value = null
-
-  if (!targetEmail) {
-    return
-  }
-
-  try {
-    let contentToSend = targetEmail.plain_text || targetEmail.body || ''
-    const MAX_LENGTH = 8000
-    if (contentToSend.length > MAX_LENGTH) {
-      contentToSend = contentToSend.substring(0, MAX_LENGTH) + '...[truncated]'
-    }
-
-    const response = await emailService.getSummary(contentToSend)
-
-    if (props.email.msg_id !== targetEmail.msg_id) {
-      console.log('Ignored stale summary response')
-      return
-    }
-
-    if (response) {
-      aiSummary.value = response
-    }
-
-  } catch (error) {
-    console.error('Auto-summary failed:', error)
-  } finally {
-    if (props.email.msg_id === targetEmail.msg_id) {
-      isSummarizing.value = false
-    }
-  }
-}
+const hasText = computed(() => {
+  return !!props.email?.plain_text && props.email.plain_text.trim().length > 0
+})
 
 watch(() => props.email, (newEmail) => {
-  aiSummary.value = null
-  isSummarizing.value = false
+  if (!newEmail) return
 
-  if (newEmail) {
-    fetchAutoSummary(newEmail)
+  const _hasHtml = !!newEmail.html && newEmail.html.trim().length > 0
+  const _hasText = !!newEmail.plain_text && newEmail.plain_text.trim().length > 0
+
+  if (_hasHtml) {
+    showHtml.value = true
+  } else if (_hasText) {
+    showHtml.value = false
+  } else {
+    showHtml.value = true
   }
+
 }, { immediate: true })
 
 </script>
@@ -117,19 +81,10 @@ watch(() => props.email, (newEmail) => {
 
         <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
-        <button @click="fetchAutoSummary(props.email)" :disabled="isSummarizing || !props.email"
-          class="p-2 rounded-md shadow-sm transition-all flex items-center gap-2" :class="[
-            darkMode ? 'hover:bg-gray-700 text-purple-400' : 'hover:bg-white text-purple-600',
-            isSummarizing || !props.email ? 'opacity-50 cursor-not-allowed' : ''
-          ]" title="Summarize with AI">
-          <div v-if="isSummarizing"
-            class="animate-spin h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
-          <Sparkles v-else :size="18" />
-          <span v-if="!isSummarizing && props.email" class="text-xs font-bold">Summarize</span>
-        </button>
       </div>
     </div>
   </div>
+
   <div v-if="loading" class="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
     <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
     <span>Loading email content...</span>
@@ -143,6 +98,7 @@ watch(() => props.email, (newEmail) => {
           <h1 class="text-2xl font-bold mb-4 break-words leading-tight"
             :class="darkMode ? 'text-white' : 'text-gray-900'">
             {{ email.subject || '(No Subject)' }}
+            <span class="text-xs font-normal text-gray-400 ml-2 select-all">{{ email.msg_id }}</span>
           </h1>
 
           <div class="flex items-center gap-4">
@@ -162,30 +118,69 @@ watch(() => props.email, (newEmail) => {
         </div>
 
         <div class="text-right text-gray-500 text-sm flex flex-col items-end gap-2 shrink-0">
-          <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+          <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">
             <Clock :size="14" />
             {{ email.time }}
           </div>
-          <div v-if="email.tag" class="flex items-center gap-2">
-            <Tag :size="14" />
-            {{ email.tag }}
+
+          <div v-if="email.tag && email.tag.length" class="flex flex-wrap gap-1 justify-end max-w-[200px]">
+            <div v-if="typeof email.tag === 'string'" class="flex items-center gap-1">
+              <Tag :size="14" /> {{ email.tag }}
+            </div>
+            <div v-else v-for="(t, i) in email.tag" :key="i"
+              class="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100">
+              <Tag :size="12" /> {{ t }}
+            </div>
           </div>
         </div>
       </div>
-      <div v-if="aiSummary" class="mb-8 relative group">
-        <button @click="aiSummary = null"
-          class="absolute top-3 right-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors z-10"
-          title="Close Analysis">
-          <X :size="16" />
-        </button>
 
-        <Summary :data="aiSummary" :darkMode="darkMode" />
-      </div>
-      <div class="prose max-w-none" :class="darkMode ? 'prose-invert' : ''">
-        <div class="email-content" v-html="safeContent"></div>
+      <div class="flex justify-end mb-4">
+        <div class="bg-gray-100 p-1 rounded-lg flex items-center gap-1">
+
+          <button @click="showHtml = true" :disabled="!hasHtml"
+            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
+              showHtml && hasHtml
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700',
+
+              !hasHtml ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
+            ]" :title="!hasHtml ? 'No HTML content' : 'View Original HTML'">
+            <FileCode :size="14" /> HTML
+          </button>
+
+          <button @click="showHtml = false" :disabled="!hasText"
+            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
+              !showHtml && hasText
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700',
+
+              !hasText ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
+            ]" :title="!hasText ? 'No Plain Text content' : 'View Plain Text'">
+            <FileText :size="14" /> Text
+          </button>
+
+        </div>
       </div>
 
-      <div v-if="email.attachments && email.attachments.length > 0" class="mb-12 pt-6 border-t"
+      <div class="prose max-w-none break-words" :class="darkMode ? 'prose-invert' : ''">
+
+        <div v-if="showHtml">
+          <EmailShadow :content="sanitizeHtml(props.email.html)" />
+        </div>
+
+        <div v-else>
+          <div class="whitespace-pre-wrap font-mono text-sm leading-relaxed 
+            text-gray-700 dark:text-gray-300 
+            bg-gray-50 dark:bg-gray-900 
+            p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+            {{ email.plain_text }}
+          </div>
+        </div>
+
+      </div>
+
+      <div v-if="email.attachments && email.attachments.length > 0" class="mb-12 pt-6 border-t mt-8"
         :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
         <h3 class="text-sm font-semibold mb-4 flex items-center gap-2 text-gray-500">
           <Paperclip :size="16" />
@@ -208,11 +203,12 @@ watch(() => props.email, (newEmail) => {
             </div>
 
             <button class="p-2 text-gray-400 hover:text-blue-500 transition-colors">
-              <Download :size="18" />
+              <Download :size="18" @click="downloadAttachment(file, email.msg_id)" />
             </button>
           </div>
         </div>
       </div>
+
       <div class="border-t pt-8" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
         <div class="flex gap-4 flex-wrap">
           <button
