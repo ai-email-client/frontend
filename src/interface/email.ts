@@ -18,6 +18,13 @@ export interface EmailSummary {
     confidence: number
 }
 
+export interface FetchEmailResult {
+    emails: EmailShortDetail[]
+    pageToken: string | null
+    selectedEmailId: string | null | undefined
+    selectedEmail: any | null | undefined
+}
+
 export interface Attachment {
     filename: string
     mimeType: string

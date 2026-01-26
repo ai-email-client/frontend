@@ -1,7 +1,4 @@
 import DOMPurify from 'dompurify'
-import emailService from './api/email'
-import { Attachment } from './interface/email'
-
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
     if ('target' in node) {
@@ -29,23 +26,6 @@ export function formatSize(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
-export async function downloadAttachment(file: Attachment, msgId: string) {
-    const response = await emailService.downloadAttachment(file, msgId)
-
-    if (!response) {
-        alert('Cannot download file')
-        return
-    }
-
-    const url = window.URL.createObjectURL(new Blob([response]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', file.filename)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
-
-
-
+export const formatLabel = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1)
 }

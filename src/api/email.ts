@@ -6,6 +6,7 @@ import type {
     EmailShortList,
     Attachment
 } from '../interface/email'
+import { Category, CategoryListResponse } from '../interface/category'
 
 export default {
     async getEmails(label: string[] = ["INBOX", "UNREAD"], pageToken: string | null = null) {
@@ -22,7 +23,7 @@ export default {
                     access_token: accessToken,
                     refresh_token: refreshToken
                 },
-                limit: 25,
+                limit: 5,
                 label: label,
                 page_token: pageToken
             }
@@ -108,6 +109,30 @@ export default {
 
             return response.data
 
+        } catch (error) {
+            throw error
+        }
+    },
+
+    async getCategories() {
+        try {
+            const accessToken = localStorage.getItem('access_token')
+            const refreshToken = localStorage.getItem('refresh_token')
+
+            if (!accessToken) throw new Error("No access token found")
+            if (!refreshToken) throw new Error("No refresh token found")
+
+            const payload = {
+                provider: 'gmail',
+                token_data: {
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                }
+            }
+            const response = await api.post<CategoryListResponse>('/email/categories', payload, {
+                timeout: 20000
+            })
+            return response.data
         } catch (error) {
             throw error
         }

@@ -6,11 +6,17 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Circle,
   Folder,
   AlertOctagon
 } from 'lucide-vue-next'
 
+import { ref } from 'vue'
 import type { User } from '../interface/user'
+
+import { CategoryMenuItem, EmailCategory } from '../interface/category'
+import { formatLabel } from '../utils';
 
 defineProps<{
   user: User | null,
@@ -19,14 +25,29 @@ defineProps<{
 }>()
 
 defineEmits(['toggleCollapse'])
+const toggleSubmenu = (item: any) => {
+  item.isOpen = !item.isOpen
+}
 
-const menuItems = [
+
+
+const menuItems = ref<CategoryMenuItem[]>([
   { icon: Inbox, label: 'Inbox', to: '/inbox', badge: 0 },
-  { icon: Folder, label: 'Category', to: '/category', badge: 0 },
+  {
+    icon: Folder,
+    label: 'Category',
+    badge: 0,
+    isOpen: false,
+    children: Object.values(EmailCategory).map((category) => ({
+      label: formatLabel(category),
+      to: `/category/${category}`
+    }))
+  },
   { icon: AlertOctagon, label: 'Spam', to: '/spam', badge: 0 },
   { icon: Send, label: 'Send', to: '/sent', badge: 0 },
   { icon: Trash2, label: 'Trash', to: '/trash', badge: 0 },
-]
+])
+
 </script>
 
 <template>
@@ -53,24 +74,58 @@ const menuItems = [
       </button>
     </div>
 
-    <nav class="flex-1 px-4 space-y-2 mt-4">
-      <router-link v-for="(item, index) in menuItems" :key="index" :to="item.to" custom v-slot="{ navigate, isActive }">
-        <div @click="navigate" class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group"
-          :class="[
-            isActive
-              ? (darkMode ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-50 text-blue-600')
-              : 'hover:bg-gray-200/50'
-          ]">
-          <component :is="item.icon" :size="20" />
+    <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
+      <template v-for="(item, index) in menuItems" :key="index">
 
-          <span v-if="!collapsed" class="font-medium">{{ item.label }}</span>
+        <router-link v-if="!item.children" :to="item.to!" custom v-slot="{ navigate, isActive }">
+          <div @click="navigate" class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group"
+            :class="[
+              isActive
+                ? (darkMode ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-50 text-blue-600')
+                : 'hover:bg-gray-200/50'
+            ]">
+            <component :is="item.icon" :size="20" />
+            <span v-if="!collapsed" class="font-medium flex-1">{{ item.label }}</span>
+            <span v-if="!collapsed && item.badge > 0" class="ml-auto text-xs px-2 py-1 rounded-full"
+              :class="darkMode ? 'bg-gray-800' : 'bg-gray-200'">
+              {{ item.badge }}
+            </span>
+          </div>
+        </router-link>
 
-          <span v-if="!collapsed && item.badge > 0" class="ml-auto text-xs px-2 py-1 rounded-full"
-            :class="darkMode ? 'bg-gray-800' : 'bg-gray-200'">
-            {{ item.badge }}
-          </span>
+        <div v-else>
+          <div @click="toggleSubmenu(item)"
+            class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-200/50"
+            :class="{ 'text-blue-500': item.isOpen }">
+            <component :is="item.icon" :size="20" />
+
+            <div v-if="!collapsed" class="flex flex-1 items-center justify-between">
+              <span class="font-medium">{{ item.label }}</span>
+              <ChevronDown :size="16" class="transition-transform duration-200"
+                :class="{ 'rotate-180': item.isOpen }" />
+            </div>
+          </div>
+
+          <div v-if="item.isOpen && !collapsed" class="mt-1 ml-4 border-l-2 pl-2 space-y-1"
+            :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+
+            <router-link v-for="(child, cIndex) in item.children" :key="cIndex" :to="child.to" custom
+              v-slot="{ navigate, isActive }">
+              <div @click="navigate"
+                class="flex items-center gap-3 p-2 rounded-lg cursor-pointer text-sm transition-colors" :class="[
+                  isActive
+                    ? (darkMode ? 'text-blue-400 bg-blue-600/10' : 'text-blue-600 bg-blue-50')
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ]">
+                <Circle :size="8" :class="{ 'fill-current': isActive }" />
+                <span>{{ child.label }}</span>
+              </div>
+            </router-link>
+
+          </div>
         </div>
-      </router-link>
+
+      </template>
     </nav>
 
     <div class="p-4 border-t" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
@@ -85,12 +140,13 @@ const menuItems = [
           </p>
           <p class="text-xs truncate text-gray-500">{{ user?.email }}</p>
         </div>
-        <router-link to="/settings" custom v-slot="{ navigate }">
+        <!-- <router-link to="/settings" custom v-slot="{ navigate }">
           <button v-if="!collapsed" @click="navigate" class="p-2 hover:bg-gray-200/20 rounded-lg">
             <Settings :size="18" />
           </button>
-        </router-link>
+        </router-link> -->
       </div>
     </div>
+
   </div>
 </template>

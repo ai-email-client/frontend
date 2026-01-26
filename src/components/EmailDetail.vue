@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {
   sanitizeHtml,
-  formatSize,
-  downloadAttachment
+  formatSize
 } from '../utils'
 
 import {
@@ -23,6 +22,8 @@ import {
 } from '../interface/email'
 
 import EmailShadow from './EmailShadow.vue'
+
+import emailService from '../api/email'
 
 const props = defineProps<{
   email: Email,
@@ -203,7 +204,7 @@ watch(() => props.email, (newEmail) => {
             </div>
 
             <button class="p-2 text-gray-400 hover:text-blue-500 transition-colors">
-              <Download :size="18" @click="downloadAttachment(file, email.msg_id)" />
+              <Download :size="18" @click="emailService.downloadAttachment(file, email.msg_id)" />
             </button>
           </div>
         </div>

@@ -18,36 +18,55 @@ import emailService from '../services/email'
 const darkMode = ref(false)
 const sidebarCollapsed = ref(false)
 
+const LABELS = ["INBOX", "UNREAD"]
 const loading = ref(false)
-
 const emails = ref<EmailShortDetail[]>([])
+const pageToken = ref<string | null>(null)
 const selectedEmailId = ref<string | null>(null)
-
-const selectedEmail = ref<any | null>(null)
+const selectedEmail = ref<any>(null)
 const isLoadingEmail = ref(false)
 
-const page_token = ref<string | null>(null)
+const handleFetchEmails = async (isLoadMore = false) => {
+  if (loading.value || (isLoadMore && !pageToken.value)) return
 
-const fetchEmails = async () => {
   try {
     loading.value = true
 
-    selectedEmail.value = null
-    selectedEmailId.value = null
-    const data = await emailService.getEmails()
-    emails.value = data.emails
-    page_token.value = data.page_token
+    const result = await emailService.fetchEmails(
+      LABELS,
+      pageToken.value,
+      emails.value,
+      isLoadMore
+    )
 
-    if (data.emails.length >= 0) {
-      selectedEmailId.value = data.emails[0].msg_id
+    emails.value = result.emails
+    pageToken.value = result.pageToken
+
+    if (result.selectedEmailId !== undefined) {
+      selectedEmailId.value = result.selectedEmailId
+    }
+    if (result.selectedEmail !== undefined) {
+      selectedEmail.value = result.selectedEmail
     }
 
-  } catch (err) {
-    console.error(err)
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
 }
+
+const onRefresh = () => {
+  handleFetchEmails(false)
+}
+
+const onLoadMore = () => {
+  handleFetchEmails(true)
+}
+
+onMounted(() => {
+  handleFetchEmails()
+})
 
 watch(selectedEmailId, async (newId) => {
   if (!newId) {
@@ -57,25 +76,15 @@ watch(selectedEmailId, async (newId) => {
 
   try {
     isLoadingEmail.value = true
-    const fullEmail = await emailService.getEmailById(newId)
+    const fullEmail = await emailService.getEmailContent(newId)
     selectedEmail.value = fullEmail
-
-
   } catch (error) {
-    console.error("Failed to fetch email details in HomePage.vue", error)
+    console.error('Fetch detail error:', error)
     selectedEmail.value = null
-    throw error
   } finally {
     isLoadingEmail.value = false
   }
 })
-onMounted(() => {
-  fetchEmails()
-})
-
-const onRefresh = () => {
-  fetchEmails()
-}
 </script>
 
 <template>
