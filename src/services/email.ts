@@ -1,43 +1,34 @@
-import type { Attachment, EmailShortDetail, FetchEmailResult } from '../interface/email'
+import type {
+    Attachment,
+    AttachmentResponse,
+    Email,
+    EmailShortList
+} from '../interface/email'
+
 import emailAPI from '../api/email'
+import { Category, CreateLabelResponse } from '../interface/category'
 
-export default {
+// TODO: 
+// 1. Complete fetchEmails
+// 2. Complete getEmailById
+// 3. Complete downloadAttachment
+
+const emailService = {
     fetchEmails: async (
-        LABELS: string[],
+        labels: string[],
+        limit: number,
         currentToken: string | null,
-        currentEmails: EmailShortDetail[] = [],
         isLoadMore = false
-    ): Promise<FetchEmailResult> => {
+    ): Promise<EmailShortList> => {
 
-        const apiToken = isLoadMore ? currentToken : null
+        const pageToken = isLoadMore ? currentToken : null
 
         try {
-            const data = await emailAPI.getEmails(LABELS, apiToken)
-
-            let newEmails: EmailShortDetail[] = []
-            let newPageToken: string | null = data.page_token || null
-
-            let newSelectedId: string | null | undefined = undefined
-            let newSelectedEmail: any | null | undefined = undefined
-
-            if (isLoadMore) {
-                newEmails = [...currentEmails, ...(data.emails || [])]
-
-            } else {
-                newEmails = data.emails || []
-                newSelectedEmail = null
-                if (newEmails.length > 0) {
-                    newSelectedId = newEmails[0].msg_id
-                } else {
-                    newSelectedId = null
-                }
-            }
+            const data = await emailAPI.getEmails(limit, labels, pageToken)
 
             return {
-                emails: newEmails,
-                pageToken: newPageToken,
-                selectedEmailId: newSelectedId,
-                selectedEmail: newSelectedEmail
+                messages: data.messages,
+                page_token: data.page_token,
             }
 
         } catch (err) {
@@ -45,7 +36,9 @@ export default {
             throw err
         }
     },
-    getEmailContent: async (msgId: string) => {
+    getEmailById: async (
+        msgId: string
+    ): Promise<Email> => {
         try {
             const data = await emailAPI.getEmailById(msgId)
             return data
@@ -54,12 +47,19 @@ export default {
             throw err
         }
     },
-    downloadAttachment: async (file: Attachment, msgId: string) => {
+    downloadAttachment: async (
+        file: Attachment,
+        msgId: string
+    ): Promise<AttachmentResponse> => {
         const response = await emailAPI.downloadAttachment(file, msgId)
 
         if (!response) {
             alert('Cannot download file')
-            return
+            return {
+                mimeType: '',
+                size: 0,
+                attachmentId: null
+            }
         }
 
         const url = window.URL.createObjectURL(new Blob([response]))
@@ -70,5 +70,35 @@ export default {
         link.click()
         link.remove()
         window.URL.revokeObjectURL(url)
+
+        return {
+            mimeType: file.mimeType,
+            size: file.size,
+            attachmentId: file.attachmentId
+        }
+    },
+    getLabelById: async (
+        labelId: string
+    ): Promise<Category> => {
+        try {
+            const data = await emailAPI.getLabelById(labelId)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    createLabel: async (
+        body: Category
+    ): Promise<CreateLabelResponse> => {
+        try {
+            const data = await emailAPI.createLabel(body)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
     }
 }
+
+export default emailService

@@ -26,7 +26,7 @@ import EmailShadow from './EmailShadow.vue'
 import emailService from '../api/email'
 
 const props = defineProps<{
-  email: Email,
+  email: Email | null,
   loading: boolean,
   darkMode: boolean
 }>()
@@ -167,7 +167,7 @@ watch(() => props.email, (newEmail) => {
       <div class="prose max-w-none break-words" :class="darkMode ? 'prose-invert' : ''">
 
         <div v-if="showHtml">
-          <EmailShadow :content="sanitizeHtml(props.email.html)" />
+          <EmailShadow :content="sanitizeHtml(props.email?.html)" />
         </div>
 
         <div v-else>

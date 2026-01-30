@@ -35,18 +35,26 @@ export interface CategoryColor {
 export interface Category {
     id: string;
     name: string;
-    messageListVisibility: MessageListVisibility;
-    labelListVisibility: LabelListVisibility;
-    type: CategoryType;
-    messagesTotal: number;
-    messagesUnread: number;
-    threadsTotal: number;
-    threadsUnread: number;
-    color: CategoryColor;
+    messageListVisibility: MessageListVisibility | null;
+    labelListVisibility: LabelListVisibility | null;
+    type: CategoryType | null;
+    messagesTotal: number | null;
+    messagesUnread: number | null;
+    threadsTotal: number | null;
+    threadsUnread: number | null;
+    color: CategoryColor | null;
 }
 
 export interface CategoryListResponse {
     categories: Category[];
+}
+
+export interface CreateLabelResponse {
+    id: string;
+    name: string;
+    messageListVisibility: MessageListVisibility;
+    labelListVisibility: LabelListVisibility;
+    color: CategoryColor;
 }
 
 export interface CategoryMenuItem {
