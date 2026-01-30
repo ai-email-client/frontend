@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
+import App from '../App.vue'
 import LoginPage from '../views/LoginPage.vue'
 import InboxPage from '../views/InboxPage.vue'
 import SpamPage from '../views/SpamPage.vue'
@@ -11,7 +12,7 @@ const routes = [
     {
         path: '/home',
         name: 'Home',
-        component: InboxPage
+        component: App
     },
     {
         path: '/',
@@ -29,7 +30,7 @@ const routes = [
         component: SentPage
     },
     {
-        path: '/category',
+        path: '/category/:category',
         name: 'Category',
         component: CategoryPage
     },

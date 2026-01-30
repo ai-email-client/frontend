@@ -27,7 +27,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
 
 <template>
   <div class="w-96 flex flex-col border-r h-full transition-colors duration-300 overflow-hidden"
-    :class="darkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'">
+    :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'">
 
     <div class="p-4 border-b shrink-0" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
 
@@ -50,7 +50,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
           <ChevronLeft :size="18" />
         </button>
 
-        <span class="text-xs font-medium" :class="darkMode ? 'text-gray-500' : 'text-gray-500'">
+        <span class="text-xs font-medium" :class="darkMode ? 'text-gray-100' : 'text-gray-500'">
           Page {{ currentPage }}/{{ Math.ceil(totalMessage / limit) || 1 }}
         </span>
 
@@ -95,7 +95,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
             {{ email.sender }}
           </span>
           <span class="text-xs whitespace-nowrap transition-colors"
-            :class="darkMode ? 'text-gray-500' : 'text-gray-500'">
+            :class="darkMode ? 'text-gray-100' : 'text-gray-500'">
             {{ email.time }}
           </span>
         </div>

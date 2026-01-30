@@ -4,11 +4,6 @@ import {
   onMounted
 } from 'vue'
 
-import {
-  Moon,
-} from 'lucide-vue-next'
-
-import AppSidebar from '../components/AppSidebar.vue'
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 
@@ -19,8 +14,13 @@ import {
 
 import emailService from '../services/email'
 
-const darkMode = ref(false)
-const sidebarCollapsed = ref(false)
+const props = defineProps({
+  darkMode: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const loading = ref(false)
 
 const labels = ["INBOX", "UNREAD"]
@@ -105,44 +105,20 @@ onMounted(() => {
   getTotalMessage()
 })
 
-
-
 </script>
 
 <template>
-  <div class="flex h-screen w-full transition-colors duration-300"
-    :class="darkMode ? 'bg-gray-950 text-gray-200' : 'bg-gray-50 text-gray-900'">
-    <AppSidebar :user="null" :collapsed="sidebarCollapsed" :darkMode="darkMode"
-      @toggleCollapse="sidebarCollapsed = !sidebarCollapsed" />
+  <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden relative">
+      <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
+        @select="(email: EmailShortDetail) => fetchEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
+        @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
-    <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-      <header class="h-16 flex items-center justify-between px-6 border-b shrink-0 z-10"
-        :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'">
-        <div class="flex items-center gap-4">
-          <button @click="darkMode = !darkMode"
-            class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
-            <Moon :size="24" />
-          </button>
-        </div>
-      </header>
-
-      <div class="flex flex-1 overflow-hidden relative">
-
-        <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-          @select="(email: EmailShortDetail) => fetchEmailById(email.msg_id)" @refresh="fetchEmails"
-          @prevPage="prevPage" @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage"
-          :limit="limit" />
-
-        <div
-          class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"
-          :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
-          <EmailDetail :email="selectedEmail" :loading="isLoadingEmail" :darkMode="darkMode" />
-        </div>
-
+      <div
+        class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"
+        :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
+        <EmailDetail :email="selectedEmail" :loading="isLoadingEmail" :darkMode="darkMode" />
       </div>
     </div>
-
   </div>
 </template>

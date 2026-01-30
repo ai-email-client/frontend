@@ -64,23 +64,25 @@ watch(() => props.email, (newEmail) => {
 
 <template>
   <div class="h-16 border-b flex items-center justify-between px-6 shrink-0"
-    :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
-    <div class="flex items-center gap-4">
+    :class="darkMode ? 'border-gray-800 bg-gray-800' : 'border-gray-200 bg-gray-50'">
+    <div class="flex items-center gap-4 bg">
       <div class="flex p-1 rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
-        <button
-          class="p-2 rounded-md shadow-sm transition-all hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+
+        <button class="p-2 rounded-md transition-all" :class="darkMode
+          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
+          : 'text-gray-600 hover:bg-white shadow-sm'">
           <Archive :size="18" />
         </button>
-        <button
-          class="p-2 rounded-md shadow-sm transition-all hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+        <button class="p-2 rounded-md transition-all" :class="darkMode
+          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
+          : 'text-gray-600 hover:bg-white shadow-sm'">
           <Trash2 :size="18" />
         </button>
-        <button
-          class="p-2 rounded-md shadow-sm transition-all hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+        <button class="p-2 rounded-md transition-all" :class="darkMode
+          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
+          : 'text-gray-600 hover:bg-white shadow-sm'">
           <Star :size="18" />
         </button>
-
-        <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
       </div>
     </div>
@@ -91,35 +93,54 @@ watch(() => props.email, (newEmail) => {
     <span>Loading email content...</span>
   </div>
 
-  <div v-else-if="email" class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-    <div class="max-w-4xl mx-auto">
+  <div v-else-if="email" class="flex-1 overflow-y-auto p-5 custom-scrollbar"
+    :class="darkMode ? 'border-gray-800 bg-gray-400' : 'border-gray-200 bg-gray-50'">
+    <div class="">
 
       <div class="flex justify-between items-start mb-8">
-        <div>
-          <h1 class="text-2xl font-bold mb-4 break-words leading-tight"
-            :class="darkMode ? 'text-white' : 'text-gray-900'">
-            {{ email.subject || '(No Subject)' }}
-            <span class="text-xs font-normal text-gray-400 ml-2 select-all">{{ email.msg_id }}</span>
-          </h1>
+        <div class="mb-8">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold mb-2 break-words leading-tight tracking-tight"
+              :class="darkMode ? 'text-white' : 'text-gray-900'">
+              {{ email.subject || '(No Subject)' }}
 
-          <div class="flex items-center gap-4">
+              <span class="ml-2 px-2 py-0.5 rounded-md text-[10px] font-normal font-mono select-all cursor-text"
+                :class="darkMode ? 'text-white' : 'text-gray-900'">
+                {{ email.msg_id }}
+              </span>
+            </h1>
+          </div>
+
+          <div class="flex items-center gap-4 p-4 rounded-xl border transition-colors" :class="darkMode
+            ? 'bg-gray-800/50 border-gray-700/50'
+            : 'bg-gray-50/80 border-gray-100'">
+
             <div
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-lg uppercase shadow-md">
-              {{ email.sender ? email.sender.charAt(0) : '?' }}
+              class="w-14 h-14 shrink-0 rounded-full bg-white text-gray-900 flex items-center justify-center font-bold text-xl shadow-lg ring-4"
+              :class="darkMode ? 'ring-gray-800' : 'ring-white'">
+              {{ email.sender ? email.sender.charAt(0).toUpperCase() : '?' }}
             </div>
-            <div>
-              <div class="font-semibold text-lg" :class="darkMode ? 'text-white' : 'text-gray-900'">
-                {{ email.sender }}
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold text-lg truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                  {{ email.sender }}
+                </span>
               </div>
-              <div class="text-sm flex items-center gap-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                <span>to me</span>
+
+              <div class="flex items-center text-sm" :class="darkMode ? 'text-gray-200' : 'text-gray-500'">
+                <span class="flex items-center gap-1.5">
+                  to me
+                </span>
               </div>
             </div>
+
           </div>
         </div>
 
-        <div class="text-right text-gray-500 text-sm flex flex-col items-end gap-2 shrink-0">
-          <div class="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">
+        <div class="text-right text-sm flex flex-col items-end gap-2 shrink-0">
+          <div class="flex items-center gap-2 px-3 py-1 rounded-full"
+            :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-500'">
             <Clock :size="14" />
             {{ email.time }}
           </div>
@@ -129,21 +150,22 @@ watch(() => props.email, (newEmail) => {
               <Tag :size="14" /> {{ email.tag }}
             </div>
             <div v-else v-for="(t, i) in email.tag" :key="i"
-              class="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100">
+              class="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100"
+              :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-500'">
               <Tag :size="12" /> {{ t }}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="flex justify-end mb-4">
-        <div class="bg-gray-100 p-1 rounded-lg flex items-center gap-1">
+      <div class="flex justify-end mb-4 ">
+        <div class="p-1 rounded-lg flex items-center gap-1" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
 
           <button @click="showHtml = true" :disabled="!hasHtml"
             class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
               showHtml && hasHtml
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
+                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
 
               !hasHtml ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
             ]" :title="!hasHtml ? 'No HTML content' : 'View Original HTML'">
@@ -153,8 +175,8 @@ watch(() => props.email, (newEmail) => {
           <button @click="showHtml = false" :disabled="!hasText"
             class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
               !showHtml && hasText
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
+                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
 
               !hasText ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
             ]" :title="!hasText ? 'No Plain Text content' : 'View Plain Text'">
@@ -167,14 +189,14 @@ watch(() => props.email, (newEmail) => {
       <div class="prose max-w-none break-words" :class="darkMode ? 'prose-invert' : ''">
 
         <div v-if="showHtml">
-          <EmailShadow :content="sanitizeHtml(props.email?.html)" />
+          <div class="bg-white">
+            <EmailShadow :content="sanitizeHtml(props.email?.html)" />
+          </div>
         </div>
 
         <div v-else>
-          <div class="whitespace-pre-wrap font-mono text-sm leading-relaxed 
-            text-gray-700 dark:text-gray-300 
-            bg-gray-50 dark:bg-gray-900 
-            p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div class="whitespace-pre-wrap font-mono text-sm leading-relaxed rounded-lg p-4"
+            :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-200 text-gray-900'">
             {{ email.plain_text }}
           </div>
         </div>
