@@ -6,6 +6,7 @@ import userAPI from "../api/user"
 
 const userService = {
     async get_profile(): Promise<UserProfile> {
+
         const response = await userAPI.get_profile()
         return response
     }

@@ -6,15 +6,19 @@ import {
 
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
+import type { UserProfile } from '../interface/user'
 
 import {
   Email,
   EmailShortDetail
 } from '../interface/email'
-
 import emailService from '../services/email'
 
 const props = defineProps({
+  user: {
+    type: Object as () => UserProfile,
+    default: null
+  },
   darkMode: {
     type: Boolean,
     default: false
@@ -35,23 +39,24 @@ const pageToken = ref<string | null>(null)
 const stackToken = ref<string[]>([''])
 const currentPage = ref(0)
 
-const totalMessage = ref(0)
+const totalMessage = ref(1)
 
 const fetchEmails = async () => {
   loading.value = true
 
   const response = await emailService.fetchEmails(labels, limit, null)
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   pageToken.value = response.page_token
   stackToken.value.push(response.page_token)
 
-
   loading.value = false
 }
 
-const fetchEmailById = async (msgId: string) => {
+const getEmailById = async (msgId: string) => {
+  if (!msgId) {
+    return
+  }
   isLoadingEmail.value = true
   const response = await emailService.getEmailById(msgId)
   selectedEmail.value = response
@@ -65,7 +70,6 @@ const nextPage = async () => {
   const response = await emailService.fetchEmails(labels, limit, nextToken, true)
 
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   if (response.page_token && !stackToken.value.includes(response.page_token)) {
     stackToken.value.push(response.page_token)
@@ -84,26 +88,28 @@ const prevPage = async () => {
   const response = await emailService.fetchEmails(labels, limit, prevToken, true)
 
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   currentPage.value--
   loading.value = false
 }
 
-// const getTotalMessage = async () => {
-//   loading.value = true
-//   const response = await emailService.getLabelById(labels[0])
-//   if (response.messagesTotal) {
-//     totalMessage.value = response.messagesTotal
-//   }
-//   loading.value = false
-// }
+const getTotalMessage = async () => {
+  loading.value = true
+  const response = await emailService.getLabelById(labels[0])
+  if (response.messagesTotal) {
+    totalMessage.value = response.messagesTotal
+  }
+  loading.value = false
+}
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
     fetchEmails()
+    if (emails.value.length > 0) {
+      getEmailById(emails.value[0].msg_id)
+    }
   }
-  // getTotalMessage()
+  getTotalMessage()
 })
 
 </script>
@@ -112,7 +118,7 @@ onMounted(() => {
   <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
     <div class="flex flex-1 overflow-hidden relative">
       <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-        @select="(email: EmailShortDetail) => fetchEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
+        @select="(msgId: string) => getEmailById(msgId)" @refresh="fetchEmails" @prevPage="prevPage"
         @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
       <div

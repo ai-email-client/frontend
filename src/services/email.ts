@@ -8,11 +8,6 @@ import type {
 import emailAPI from '../api/email'
 import { Category, CreateLabelResponse } from '../interface/category'
 
-// TODO: 
-// 1. Complete fetchEmails
-// 2. Complete getEmailById
-// 3. Complete downloadAttachment
-
 const emailService = {
     fetchEmails: async (
         labels: string[],
@@ -23,29 +18,27 @@ const emailService = {
 
         const pageToken = isLoadMore ? currentToken : null
 
-        try {
-            const data = await emailAPI.getEmails(limit, labels, pageToken)
+        const data = await emailAPI.getEmails(limit, labels, pageToken)
 
-            return {
-                messages: data.messages,
-                page_token: data.page_token,
-            }
-
-        } catch (err) {
-            console.error('Fetch error:', err)
-            throw err
+        return {
+            messages: data.messages,
+            page_token: data.page_token,
         }
     },
     getEmailById: async (
         msgId: string
     ): Promise<Email> => {
-        try {
-            const data = await emailAPI.getEmailById(msgId)
-            return data
-        } catch (err) {
-            console.error('Fetch error:', err)
-            throw err
+        if (!msgId) {
+            throw new Error('Message ID is required')
         }
+
+        const data = await emailAPI.getEmailById(msgId)
+
+        if (!data) {
+            throw new Error('Email not found')
+        }
+
+        return data
     },
     downloadAttachment: async (
         file: Attachment,

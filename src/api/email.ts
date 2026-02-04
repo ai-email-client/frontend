@@ -37,24 +37,16 @@ export default {
     },
 
     async getEmailById(id: string) {
-        const payload = {
-            message_id: id
-        }
         try {
+            const payload = {
+                msg_id: id
+            }
             const response = await api.post<Email>('/email/message/get', payload)
 
             return response.data
 
         } catch (error: any) {
-            console.error("Error fetching email:", error)
-
-            if (error.response) {
-                console.error("Status:", error.response.status)
-                console.error("Server Message:", error.response.data)
-            } else {
-                console.error("Network/Client Error:", error.message)
-            }
-            throw error
+            console.error("Error get email by id:", error.response.data)
         }
     },
 

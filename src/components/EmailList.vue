@@ -74,7 +74,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
 
     <div class="flex-1 overflow-y-auto custom-scrollbar">
 
-      <div v-for="email in emails" :key="email.msg_id" @click="$emit('select', email)"
+      <div v-for="email in emails" :key="email.msg_id" @click="$emit('select', email.msg_id)"
         class="p-4 border-b border-l-4 cursor-pointer transition-all group relative" :class="[
           darkMode ? 'border-b-gray-800' : 'border-b-gray-100',
 

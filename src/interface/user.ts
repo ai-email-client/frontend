@@ -5,7 +5,7 @@ export interface UserRequest {
 
 export interface UserProfile {
     emailAddress: string
-    messagesTotal: number
-    threadsTotal: number
+    messagesTotal: number | 1
+    threadsTotal: number | 1
     historyId: string
 }
