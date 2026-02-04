@@ -4,10 +4,9 @@ import { UserProfile } from '../interface/user'
 export default {
     async get_profile(): Promise<UserProfile> {
         try {
-            const response = await api.get<UserProfile>('/user/profile')
+            const response = await api.get<UserProfile>('/user/profile', { timeout: 1000 })
             return response.data
         } catch (error) {
-            console.log(error)
             throw error
         }
     }

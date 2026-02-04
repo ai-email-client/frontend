@@ -100,7 +100,9 @@ const prevPage = async () => {
 // }
 
 onMounted(() => {
-  fetchEmails()
+  if (localStorage.getItem('jwt_token')) {
+    fetchEmails()
+  }
   // getTotalMessage()
 })
 

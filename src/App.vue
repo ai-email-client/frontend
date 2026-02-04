@@ -3,7 +3,6 @@ import {
   ref,
   computed,
   onMounted,
-  onUnmounted,
   watch
 } from 'vue'
 
@@ -28,16 +27,46 @@ const darkMode = ref(false)
 const showLayout = computed(() => route.name !== 'Home' && route.name !== 'Login')
 const user = ref<UserProfile | null>(null)
 
-const handleAuthToken = async () => {
+const handleAuthCheck = async () => {
+  const publicPages = ['Login', 'Callback']
+  const isPublicPage = publicPages.includes(route.name as string)
+
+  if (isPublicPage) {
+    return
+  }
+
   const token = localStorage.getItem('jwt_token')
+
   if (!token) {
-    router.push('/login')
+    router.replace('/login')
+  } else {
+    if (!user.value) {
+      try {
+        user.value = await userService.get_profile()
+      } catch (error) {
+        handleLogout()
+      }
+    }
+    router.replace('/inbox')
   }
 }
 
-onMounted(() => {
-  handleAuthToken()
+const handleLogout = () => {
+  localStorage.removeItem('jwt_token')
+  router.replace('/login')
+}
+
+onMounted(async () => {
+  await router.isReady()
+  handleAuthCheck()
 })
+
+watch(
+  () => route.name,
+  () => {
+    handleAuthCheck()
+  }
+)
 </script>
 
 <template>

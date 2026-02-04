@@ -8,29 +8,22 @@ const statusMessage = ref('')
 const isError = ref(false)
 
 onMounted(async () => {
+
     const token = route.query.token as string
 
     if (token) {
         try {
             localStorage.setItem('jwt_token', token)
             statusMessage.value = 'Login Success'
-
-            if (window.opener) {
-                setTimeout(() => {
-                    window.close()
-                }, 1000)
-                return
-            }
-
             setTimeout(() => {
                 router.replace('/inbox')
-            }, 800)
+            }, 3000)
 
         } catch (e) {
-            handleError('')
+            handleError('Login Failed')
         }
     } else {
-        handleError('')
+        handleError('Login Failed')
     }
 })
 
@@ -40,7 +33,7 @@ const handleError = (msg = '') => {
 
     setTimeout(() => {
         router.replace('/login')
-    }, 2500)
+    }, 2000)
 }
 </script>
 
