@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import {
-  ref,
-  onMounted
+  ref
 } from 'vue'
 
-import {
-  useRouter,
-  useRoute
-} from 'vue-router'
-
 import auth from '../api/auth'
-
-const router = useRouter()
-const route = useRoute()
 
 const isLoading = ref(false)
 
@@ -22,17 +13,6 @@ async function handleGoogleLogin() {
   window.location.href = response.url
 }
 
-onMounted(() => {
-  const access_token = route.query.access_token as string
-  const refresh_token = route.query.refresh_token as string
-
-  if (access_token) {
-    localStorage.setItem('access_token', access_token)
-    localStorage.setItem('refresh_token', refresh_token)
-
-    router.push('/inbox')
-  }
-})
 </script>
 
 <template>

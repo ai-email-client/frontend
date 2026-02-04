@@ -13,13 +13,13 @@ import {
 } from 'lucide-vue-next'
 
 import { ref } from 'vue'
-import type { User } from '../interface/user'
 
 import { CategoryMenuItem, EmailCategory } from '../interface/category'
 import { formatLabel } from '../utils';
+import { UserProfile } from '../interface/user';
 
 defineProps<{
-  user: User | null,
+  user: UserProfile | null,
   collapsed: boolean,
   darkMode: boolean
 }>()
@@ -28,8 +28,6 @@ defineEmits(['toggleCollapse'])
 const toggleSubmenu = (item: any) => {
   item.isOpen = !item.isOpen
 }
-
-
 
 const menuItems = ref<CategoryMenuItem[]>([
   { icon: Inbox, label: 'Inbox', to: '/inbox', badge: 0 },
@@ -132,13 +130,13 @@ const menuItems = ref<CategoryMenuItem[]>([
       <div class="flex items-center gap-3">
         <div
           class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg">
-          {{ user?.name?.charAt(0).toUpperCase() }}
+          {{ user?.emailAddress?.charAt(0).toUpperCase() }}
         </div>
         <div v-if="!collapsed" class="flex-1 min-w-0">
           <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
-            {{ user?.name }}
+            {{ user?.emailAddress }}
           </p>
-          <p class="text-xs truncate text-gray-500">{{ user?.email }}</p>
+          <p class="text-xs truncate text-gray-500">{{ user?.emailAddress }}</p>
         </div>
         <!-- <router-link to="/settings" custom v-slot="{ navigate }">
           <button v-if="!collapsed" @click="navigate" class="p-2 hover:bg-gray-200/20 rounded-lg">

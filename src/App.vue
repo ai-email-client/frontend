@@ -1,32 +1,55 @@
 <script setup lang="ts">
 import {
   ref,
-  computed
+  computed,
+  onMounted,
+  onUnmounted,
+  watch
 } from 'vue'
+
 import {
-  useRoute
+  useRoute,
+  useRouter
 } from 'vue-router'
+
 import {
   Moon
 } from 'lucide-vue-next'
 import AppSidebar from './components/AppSidebar.vue'
+import userService from './services/user'
+import { UserProfile } from './interface/user'
 
 const route = useRoute()
+const router = useRouter()
 
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
 
-const showSidebar = computed(() => route.name !== 'Login')
+const showLayout = computed(() => route.name !== 'Home' && route.name !== 'Login')
+const user = ref<UserProfile | null>(null)
 
+const handleAuthToken = async () => {
+  const token = localStorage.getItem('jwt_token')
+  if (!token) {
+    router.push('/login')
+  }
+}
+
+onMounted(() => {
+  handleAuthToken()
+})
 </script>
 
 <template>
   <div class="flex h-screen w-full transition-colors duration-300"
     :class="darkMode ? 'bg-gray-950 text-gray-200' : 'bg-gray-50 text-gray-900'">
-    <AppSidebar v-if="showSidebar" :user="null" :collapsed="sidebarCollapsed" :darkMode="darkMode"
+
+    <AppSidebar v-if="showLayout" :user="user" :collapsed="sidebarCollapsed" :darkMode="darkMode"
       @toggleCollapse="sidebarCollapsed = !sidebarCollapsed" />
+
     <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-      <header class="h-16 flex items-center justify-between px-6 border-b shrink-0 z-10"
+
+      <header v-if="showLayout" class="h-16 flex items-center justify-between px-6 border-b shrink-0 z-10"
         :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'">
         <div class="flex items-center gap-4">
           <button @click="darkMode = !darkMode"
@@ -36,6 +59,7 @@ const showSidebar = computed(() => route.name !== 'Login')
           </button>
         </div>
       </header>
+
       <router-view v-model:darkMode="darkMode" />
     </div>
   </div>

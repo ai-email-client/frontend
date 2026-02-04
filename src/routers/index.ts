@@ -7,15 +7,16 @@ import SpamPage from '../views/SpamPage.vue'
 import SentPage from '../views/SentPage.vue'
 import TrashPage from '../views/TrashPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
+import CallbackPage from '../views/Callback.vue'
 
 const routes = [
     {
-        path: '/home',
+        path: '/',
         name: 'Home',
         component: App
     },
     {
-        path: '/',
+        path: '/login',
         name: 'Login',
         component: LoginPage
     },
@@ -43,6 +44,11 @@ const routes = [
         path: '/spam',
         name: 'Spam',
         component: SpamPage
+    },
+    {
+        path: '/callback',
+        name: 'Callback',
+        component: CallbackPage
     }
 ]
 

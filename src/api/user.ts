@@ -1,10 +1,14 @@
 import api from './api'
-import { User } from '../interface/user'
+import { UserProfile } from '../interface/user'
 
-const url = '/user'
 export default {
-    async getUser() {
-        const response = await api.get<User>(url + '/profile')
-        return response.data
+    async get_profile(): Promise<UserProfile> {
+        try {
+            const response = await api.get<UserProfile>('/user/profile')
+            return response.data
+        } catch (error) {
+            console.log(error)
+            throw error
+        }
     }
 }

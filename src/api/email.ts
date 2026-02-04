@@ -2,7 +2,6 @@ import api from './api'
 
 import type {
     Email,
-    EmailSummary,
     EmailShortList,
     MessageModify,
     Attachment,
@@ -22,18 +21,7 @@ export default {
         pageToken: string | null = null
     ) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
-
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
-
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
                 limit: limit,
                 label: labels,
                 page_token: pageToken
@@ -49,18 +37,7 @@ export default {
     },
 
     async getEmailById(id: string) {
-        const accessToken = localStorage.getItem('access_token')
-        const refreshToken = localStorage.getItem('refresh_token')
-
-        if (!accessToken) throw new Error("No access token found")
-        if (!refreshToken) throw new Error("No refresh token found")
-
         const payload = {
-            provider: 'gmail',
-            token_data: {
-                access_token: accessToken,
-                refresh_token: refreshToken
-            },
             message_id: id
         }
         try {
@@ -81,30 +58,9 @@ export default {
         }
     },
 
-    async getSummary(plain_text: string) {
-
-        const payload = {
-            email_text: plain_text
-        }
-
-        const response = await api.post<EmailSummary>('/email/summary', payload)
-        return response.data
-    },
-
     async downloadAttachment(file: Attachment, msgId: string) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
-
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
-
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
                 message_id: msgId,
                 attachment_id: file.attachmentId
             }
@@ -117,41 +73,20 @@ export default {
         }
     },
 
-    async getLabels() {
-        try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
-
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
-
-            const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                }
-            }
-            const response = await api.post<CategoryListResponse>('/email/labels', payload)
-            return response.data
-        } catch (error) {
-            throw error
-        }
-    },
+    // async getLabels() {
+    //     try {
+    //         const response = await api.get<CategoryListResponse>('/email/labels')
+    //         return response.data
+    //     } catch (error) {
+    //         throw error
+    //     }
+    // },
     async getLabelById(id: string) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
+
                 id: id
             }
             const response = await api.post<Category>('/email/label/get', payload)
@@ -163,18 +98,10 @@ export default {
 
     async createLabel(body: Category) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
+
                 body: body
             }
             const response = await api.post<CreateLabelResponse>('/email/label/create', payload)
@@ -186,18 +113,10 @@ export default {
 
     async messageModify(body: MessageModify) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
+
                 body
             }
             const response = await api.post<CategoryListResponse>('/email/message/modify', payload)
@@ -209,18 +128,10 @@ export default {
 
     async messageBatchModify(body: MessageBatchModify) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
+
                 body: body
             }
             const response = await api.post<CategoryListResponse>('/email/message/batch-modify', payload)
@@ -231,19 +142,11 @@ export default {
     },
     async messageDelete(id: string) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
-                id
+
+                id: id
             }
             const response = await api.post<CategoryListResponse>('/email/message/delete', payload)
             return response.data
@@ -253,19 +156,11 @@ export default {
     },
     async messageBatchDelete(ids: string[]) {
         try {
-            const accessToken = localStorage.getItem('access_token')
-            const refreshToken = localStorage.getItem('refresh_token')
 
-            if (!accessToken) throw new Error("No access token found")
-            if (!refreshToken) throw new Error("No refresh token found")
 
             const payload = {
-                provider: 'gmail',
-                token_data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                },
-                ids
+
+                ids: ids
             }
             const response = await api.post<CategoryListResponse>('/email/message/batch-delete', payload)
             return response.data

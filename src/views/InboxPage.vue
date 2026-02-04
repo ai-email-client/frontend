@@ -23,7 +23,7 @@ const props = defineProps({
 
 const loading = ref(false)
 
-const labels = ["INBOX", "UNREAD"]
+const labels = ["INBOX"]
 const limit = 5
 
 const emails = ref<EmailShortDetail[]>([])
@@ -39,7 +39,6 @@ const totalMessage = ref(0)
 
 const fetchEmails = async () => {
   loading.value = true
-
 
   const response = await emailService.fetchEmails(labels, limit, null)
   emails.value = response.messages
@@ -91,18 +90,18 @@ const prevPage = async () => {
   loading.value = false
 }
 
-const getTotalMessage = async () => {
-  loading.value = true
-  const response = await emailService.getLabelById(labels[0])
-  if (response.messagesTotal) {
-    totalMessage.value = response.messagesTotal
-  }
-  loading.value = false
-}
+// const getTotalMessage = async () => {
+//   loading.value = true
+//   const response = await emailService.getLabelById(labels[0])
+//   if (response.messagesTotal) {
+//     totalMessage.value = response.messagesTotal
+//   }
+//   loading.value = false
+// }
 
 onMounted(() => {
   fetchEmails()
-  getTotalMessage()
+  // getTotalMessage()
 })
 
 </script>

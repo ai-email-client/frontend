@@ -1,0 +1,17 @@
+import {
+    DifyResponse,
+    DifySummaryRequest
+} from "../interface/dify"
+
+import difyAPI from "../api/dify"
+
+const difyService = {
+    async getSummary(
+        req: DifySummaryRequest
+    ): Promise<DifyResponse> {
+        const response = await difyAPI.getSummary(req)
+        return response
+    }
+}
+
+export default difyService
