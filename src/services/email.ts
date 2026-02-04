@@ -6,7 +6,7 @@ import type {
 } from '../interface/email'
 
 import emailAPI from '../api/email'
-import { Category, CreateLabelResponse } from '../interface/category'
+import { Category, CategoryListResponse, CreateLabelResponse } from '../interface/category'
 
 const emailService = {
     fetchEmails: async (
@@ -86,6 +86,35 @@ const emailService = {
     ): Promise<CreateLabelResponse> => {
         try {
             const data = await emailAPI.createLabel(body)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    syncLabels: async (
+        names: string[]
+    ): Promise<CategoryListResponse> => {
+        try {
+            const data = await emailAPI.syncLabels(names)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    getLabels: async (): Promise<CategoryListResponse> => {
+        try {
+            const data = await emailAPI.getLabels()
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    initLabel: async (): Promise<CategoryListResponse> => {
+        try {
+            const data = await emailAPI.initLabel()
             return data
         } catch (err) {
             console.error('Fetch error:', err)

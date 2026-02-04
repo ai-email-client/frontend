@@ -13,6 +13,9 @@ import {
 } from '../interface/email'
 
 import emailService from '../services/email'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 const props = defineProps<{
     darkMode: boolean
@@ -20,7 +23,6 @@ const props = defineProps<{
 
 const loading = ref(false)
 
-const labels = ["SPAM"]
 const limit = 5
 
 const emails = ref<EmailShortDetail[]>([])
@@ -32,24 +34,31 @@ const pageToken = ref<string | null>(null)
 const stackToken = ref<string[]>([''])
 const currentPage = ref(0)
 
-const totalMessage = ref(0)
+const totalMessage = ref(1)
+
+const getCurrentLabel = () => {
+    const spamType = route.params.spamType as string
+    if (!spamType) return ["SPAM"]
+
+    return [spamType.toUpperCase(), "SPAM"]
+}
 
 const fetchEmails = async () => {
     loading.value = true
 
-
-    const response = await emailService.fetchEmails(labels, limit, null)
+    const response = await emailService.fetchEmails(getCurrentLabel(), limit, null)
     emails.value = response.messages
-    fetchEmailById(emails.value[0].msg_id)
 
     pageToken.value = response.page_token
     stackToken.value.push(response.page_token)
 
-
     loading.value = false
 }
 
-const fetchEmailById = async (msgId: string) => {
+const getEmailById = async (msgId: string) => {
+    if (!msgId) {
+        return
+    }
     isLoadingEmail.value = true
     const response = await emailService.getEmailById(msgId)
     selectedEmail.value = response
@@ -60,10 +69,9 @@ const nextPage = async () => {
     loading.value = true
 
     const nextToken = stackToken.value[currentPage.value + 1]
-    const response = await emailService.fetchEmails(labels, limit, nextToken, true)
+    const response = await emailService.fetchEmails(getCurrentLabel(), limit, nextToken, true)
 
     emails.value = response.messages
-    fetchEmailById(emails.value[0].msg_id)
 
     if (response.page_token && !stackToken.value.includes(response.page_token)) {
         stackToken.value.push(response.page_token)
@@ -78,13 +86,10 @@ const nextPage = async () => {
 const prevPage = async () => {
     loading.value = true
 
-
-
     const prevToken = stackToken.value[currentPage.value - 1]
-    const response = await emailService.fetchEmails(labels, limit, prevToken, true)
+    const response = await emailService.fetchEmails(getCurrentLabel(), limit, prevToken, true)
 
     emails.value = response.messages
-    fetchEmailById(emails.value[0].msg_id)
 
     currentPage.value--
     loading.value = false
@@ -92,7 +97,7 @@ const prevPage = async () => {
 
 const getTotalMessage = async () => {
     loading.value = true
-    const response = await emailService.getLabelById(labels[0])
+    const response = await emailService.getLabelById(getCurrentLabel()[0])
     if (response.messagesTotal) {
         totalMessage.value = response.messagesTotal
     }
@@ -100,22 +105,22 @@ const getTotalMessage = async () => {
 }
 
 onMounted(() => {
-    fetchEmails()
+    if (localStorage.getItem('jwt_token')) {
+        fetchEmails()
+        if (emails.value.length > 0) {
+            getEmailById(emails.value[0].msg_id)
+        }
+    }
     getTotalMessage()
 })
 
 
-
 </script>
 <template>
-
     <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-
         <div class="flex flex-1 overflow-hidden relative">
-
             <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-                @select="(email: EmailShortDetail) => fetchEmailById(email.msg_id)" @refresh="fetchEmails"
+                @select="(email: EmailShortDetail) => getEmailById(email.msg_id)" @refresh="fetchEmails"
                 @prevPage="prevPage" @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage"
                 :limit="limit" />
 
@@ -123,8 +128,6 @@ onMounted(() => {
                 :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
                 <EmailDetail :email="selectedEmail" :loading="isLoadingEmail" :darkMode="darkMode" />
             </div>
-
         </div>
     </div>
-
 </template>

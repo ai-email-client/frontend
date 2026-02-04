@@ -17,6 +17,7 @@ import { ref } from 'vue'
 import { CategoryMenuItem, EmailCategory } from '../interface/category'
 import { formatLabel } from '../utils';
 import { UserProfile } from '../interface/user';
+import { SpamType } from '../interface/spam';
 
 defineProps<{
   user: UserProfile | null,
@@ -30,7 +31,12 @@ const toggleSubmenu = (item: any) => {
 }
 
 const menuItems = ref<CategoryMenuItem[]>([
-  { icon: Inbox, label: 'Inbox', to: '/inbox', badge: 0 },
+  {
+    icon: Inbox,
+    label: 'Inbox',
+    to: '/inbox',
+    badge: 0
+  },
   {
     icon: Folder,
     label: 'Category',
@@ -41,9 +47,29 @@ const menuItems = ref<CategoryMenuItem[]>([
       to: `/category/${category}`
     }))
   },
-  { icon: AlertOctagon, label: 'Spam', to: '/spam', badge: 0 },
-  { icon: Send, label: 'Send', to: '/sent', badge: 0 },
-  { icon: Trash2, label: 'Trash', to: '/trash', badge: 0 },
+  {
+    icon: AlertOctagon,
+    label: 'Spam',
+    to: '/spam',
+    badge: 0,
+    isOpen: false,
+    children: Object.values(SpamType).map((spamType) => ({
+      label: formatLabel(spamType),
+      to: `/spam/${spamType}`
+    }))
+  },
+  {
+    icon: Send,
+    label: 'Send',
+    to: '/sent',
+    badge: 0
+  },
+  {
+    icon: Trash2,
+    label: 'Trash',
+    to: '/trash',
+    badge: 0
+  },
 ])
 
 </script>

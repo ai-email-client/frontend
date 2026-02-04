@@ -41,7 +41,7 @@ const routes = [
         component: TrashPage
     },
     {
-        path: '/spam',
+        path: '/spam/:spamType',
         name: 'Spam',
         component: SpamPage
     },

@@ -14,12 +14,16 @@ import {
   Email,
   EmailShortDetail
 } from '../interface/email'
+import {
+  Category
+} from '../interface/category'
 
 import emailService from '../services/email'
 
 const route = useRoute()
 
 const props = defineProps<{
+  labels: Category[]
   darkMode: boolean
 }>()
 
@@ -40,28 +44,28 @@ const totalMessage = ref(0)
 
 const getCurrentLabel = () => {
   const category = route.params.category as string
-  if (!category) return "INBOX"
+  console.log(props.labels)
+  if (!category) return ["INBOX"]
 
-  return category.toUpperCase()
+  return [category.toUpperCase(), "INBOX"]
 }
 
 const fetchEmails = async () => {
   loading.value = true
 
-  const labels = [getCurrentLabel(), "UNREAD"]
-
-  const response = await emailService.fetchEmails(labels, limit, null)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, null)
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   pageToken.value = response.page_token
   stackToken.value.push(response.page_token)
 
-
   loading.value = false
 }
 
-const fetchEmailById = async (msgId: string) => {
+const getEmailById = async (msgId: string) => {
+  if (!msgId) {
+    return
+  }
   isLoadingEmail.value = true
   const response = await emailService.getEmailById(msgId)
   selectedEmail.value = response
@@ -71,13 +75,10 @@ const fetchEmailById = async (msgId: string) => {
 const nextPage = async () => {
   loading.value = true
 
-  const labels = [getCurrentLabel(), "UNREAD"]
-
   const nextToken = stackToken.value[currentPage.value + 1]
-  const response = await emailService.fetchEmails(labels, limit, nextToken, true)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, nextToken, true)
 
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   if (response.page_token && !stackToken.value.includes(response.page_token)) {
     stackToken.value.push(response.page_token)
@@ -92,13 +93,10 @@ const nextPage = async () => {
 const prevPage = async () => {
   loading.value = true
 
-  const labels = [getCurrentLabel(), "UNREAD"]
-
   const prevToken = stackToken.value[currentPage.value - 1]
-  const response = await emailService.fetchEmails(labels, limit, prevToken, true)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, prevToken, true)
 
   emails.value = response.messages
-  fetchEmailById(emails.value[0].msg_id)
 
   currentPage.value--
   loading.value = false
@@ -106,10 +104,7 @@ const prevPage = async () => {
 
 const getTotalMessage = async () => {
   loading.value = true
-
-  const labels = [getCurrentLabel(), "UNREAD"]
-
-  const response = await emailService.getLabelById(labels[0])
+  const response = await emailService.getLabelById(getCurrentLabel()[0])
   if (response.messagesTotal) {
     totalMessage.value = response.messagesTotal
   }
@@ -117,10 +112,14 @@ const getTotalMessage = async () => {
 }
 
 onMounted(() => {
-  fetchEmails()
+  if (localStorage.getItem('jwt_token')) {
+    fetchEmails()
+    if (emails.value.length > 0) {
+      getEmailById(emails.value[0].msg_id)
+    }
+  }
   getTotalMessage()
 })
-
 
 
 </script>
@@ -128,7 +127,7 @@ onMounted(() => {
   <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
     <div class="flex flex-1 overflow-hidden relative">
       <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-        @select="(email: EmailShortDetail) => fetchEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
+        @select="(email: EmailShortDetail) => getEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
         @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
       <div

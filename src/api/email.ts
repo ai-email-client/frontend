@@ -64,21 +64,17 @@ export default {
             throw error
         }
     },
-
-    // async getLabels() {
-    //     try {
-    //         const response = await api.get<CategoryListResponse>('/email/labels')
-    //         return response.data
-    //     } catch (error) {
-    //         throw error
-    //     }
-    // },
+    async getLabels() {
+        try {
+            const response = await api.get<CategoryListResponse>('/email/labels')
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
     async getLabelById(id: string) {
         try {
-
-
             const payload = {
-
                 id: id
             }
             const response = await api.post<Category>('/email/label/get', payload)
@@ -103,6 +99,27 @@ export default {
         }
     },
 
+    async initLabel() {
+        try {
+            const response = await api.post<CategoryListResponse>('/email/initialize/labels')
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+
+    async syncLabels(names: string[]) {
+        try {
+            const payload = {
+                names: names
+            }
+            const response = await api.post<CategoryListResponse>('/email/labels/sync', payload)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+
     async messageModify(body: MessageModify) {
         try {
 
@@ -120,8 +137,6 @@ export default {
 
     async messageBatchModify(body: MessageBatchModify) {
         try {
-
-
             const payload = {
 
                 body: body
