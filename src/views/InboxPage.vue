@@ -28,7 +28,7 @@ const props = defineProps({
 const loading = ref(false)
 
 const labels = ["INBOX"]
-const limit = 5
+const limit = 10
 
 const emails = ref<EmailShortDetail[]>([])
 const selectedEmail = ref<Email | null>(null)

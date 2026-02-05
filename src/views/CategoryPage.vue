@@ -14,16 +14,14 @@ import {
   Email,
   EmailShortDetail
 } from '../interface/email'
-import {
-  Category
-} from '../interface/category'
 
+import { useLabelStore } from '../stores/categoryStore'
 import emailService from '../services/email'
 
 const route = useRoute()
+const labelStore = useLabelStore()
 
 const props = defineProps<{
-  labels: Category[]
   darkMode: boolean
 }>()
 
@@ -43,11 +41,9 @@ const currentPage = ref(0)
 const totalMessage = ref(0)
 
 const getCurrentLabel = () => {
-  const category = route.params.category as string
-  console.log(props.labels)
-  if (!category) return ["INBOX"]
+  const currentCategoryName = route.params.category as string
 
-  return [category.toUpperCase(), "INBOX"]
+  return [labelStore.categoryLabels[currentCategoryName].id, "INBOX"]
 }
 
 const fetchEmails = async () => {

@@ -4,7 +4,6 @@ import {
   computed,
   onMounted,
   watch,
-  provide
 } from 'vue'
 
 import {
@@ -22,15 +21,16 @@ import userService from './services/user'
 import { UserProfile } from './interface/user'
 import emailService from './services/email'
 import { Category, CategoryListResponse, EmailCategory } from './interface/category'
+import { useLabelStore } from './stores/categoryStore'
 
 const route = useRoute()
 const router = useRouter()
+const labelStore = useLabelStore()
 
 // State
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
 const user = ref<UserProfile | null>(null)
-const labels = ref<Category[]>([])
 
 const categoryLabels = ref<Record<string, Category>>({})
 const isAppLoading = ref(true)
@@ -89,20 +89,12 @@ const matchLabels = async (allLabels: CategoryListResponse) => {
 
     if (foundLabel) {
       categoryLabels.value[category] = foundLabel
-      console.log(`Matched: ${category} -> ID: ${foundLabel.id}`)
     } else {
       missingCategories.push(category)
     }
   })
 
-  if (missingCategories.length > 0) {
-    try {
-      const createdLabels = await emailService.syncLabels(missingCategories)
-      console.log(createdLabels)
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  labelStore.setLabels(allLabels.categories, categoryLabels.value)
 }
 
 const handleLogout = () => {
