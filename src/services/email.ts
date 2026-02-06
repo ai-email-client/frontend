@@ -112,7 +112,7 @@ const emailService = {
             throw err
         }
     },
-    initLabel: async (): Promise<CategoryListResponse> => {
+    initLabels: async (): Promise<CategoryListResponse> => {
         try {
             const data = await emailAPI.initLabel()
             return data

@@ -19,8 +19,6 @@ import {
 import AppSidebar from './components/AppSidebar.vue'
 import userService from './services/user'
 import { UserProfile } from './interface/user'
-import emailService from './services/email'
-import { Category, CategoryListResponse, EmailCategory } from './interface/category'
 import { useLabelStore } from './stores/categoryStore'
 
 const route = useRoute()
@@ -32,7 +30,6 @@ const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
 const user = ref<UserProfile | null>(null)
 
-const categoryLabels = ref<Record<string, Category>>({})
 const isAppLoading = ref(true)
 
 // Computed
@@ -64,8 +61,7 @@ const handleAuthCheck = async () => {
     try {
       user.value = await userService.get_profile()
 
-      const labels = await emailService.getLabels()
-      matchLabels(labels)
+      await labelStore.initialize()
     } catch (error) {
       handleLogout()
       return
@@ -77,24 +73,6 @@ const handleAuthCheck = async () => {
   }
 
   isAppLoading.value = false
-}
-
-const matchLabels = async (allLabels: CategoryListResponse) => {
-  const missingCategories: string[] = []
-
-  Object.values(EmailCategory).forEach((category) => {
-    const foundLabel = allLabels.categories.find((l: Category) =>
-      l.name.toLowerCase() === category.toLowerCase()
-    )
-
-    if (foundLabel) {
-      categoryLabels.value[category] = foundLabel
-    } else {
-      missingCategories.push(category)
-    }
-  })
-
-  labelStore.setLabels(allLabels.categories, categoryLabels.value)
 }
 
 const handleLogout = () => {

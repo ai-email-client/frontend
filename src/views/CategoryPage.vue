@@ -43,7 +43,7 @@ const totalMessage = ref(0)
 const getCurrentLabel = () => {
   const currentCategoryName = route.params.category as string
 
-  return [labelStore.categoryLabels[currentCategoryName].id, "INBOX"]
+  return [labelStore.getLabelIdByName(currentCategoryName), "INBOX"]
 }
 
 const fetchEmails = async () => {

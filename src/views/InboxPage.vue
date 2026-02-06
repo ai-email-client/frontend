@@ -28,7 +28,7 @@ const props = defineProps({
 const loading = ref(false)
 
 const labels = ["INBOX"]
-const limit = 10
+const limit = 5
 
 const emails = ref<EmailShortDetail[]>([])
 const selectedEmail = ref<Email | null>(null)
@@ -76,7 +76,7 @@ const nextPage = async () => {
   }
   currentPage.value++
 
-
+  selectedEmail.value = null
 
   loading.value = false
 }
@@ -90,6 +90,9 @@ const prevPage = async () => {
   emails.value = response.messages
 
   currentPage.value--
+
+  selectedEmail.value = null
+
   loading.value = false
 }
 

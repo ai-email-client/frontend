@@ -30,7 +30,6 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('jwt_token')
-            console.log(router.currentRoute.value.name)
             if (router.currentRoute.value.name !== 'Login') {
                 router.push('/login')
             }
