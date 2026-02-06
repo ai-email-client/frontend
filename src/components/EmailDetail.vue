@@ -10,12 +10,11 @@ import {
   watch
 } from 'vue';
 
-// import emailService from '../services/email'
-// import Summary from './Summary.vue'
 import {
   Reply, Forward, Archive, Trash2,
   Star, Clock, Tag, Paperclip,
-  File, Download, FileCode, FileText
+  File, Download, FileCode, FileText,
+  Loader
 } from 'lucide-vue-next'
 import {
   Email,
@@ -23,7 +22,7 @@ import {
 
 import EmailShadow from './EmailShadow.vue'
 
-import emailService from '../api/email'
+import difyService from '../services/dify'
 
 const props = defineProps<{
   email: Email | null,
@@ -31,10 +30,27 @@ const props = defineProps<{
   darkMode: boolean
 }>()
 
-defineEmits(['toggleDarkMode'])
 
 
 const showHtml = ref(true)
+const isSummarizing = ref(false)
+
+const sendToDify = async () => {
+  if (!props.email || isSummarizing.value) return
+  
+  isSummarizing.value = true
+
+  const req = {
+    msg_id: props.email.msg_id,
+    plain_text: props.email.plain_text || '',
+    email_tags: props.email.tag
+  }
+
+  const response = await difyService.testSummary(req)
+  console.log('Dify response:', response)
+
+  isSummarizing.value = false
+}
 
 const hasHtml = computed(() => {
   return !!props.email?.html && props.email.html.trim().length > 0
@@ -60,6 +76,7 @@ watch(() => props.email, (newEmail) => {
 
 }, { immediate: true })
 
+defineEmits(['sendEmail', 'archiveEmail','trashEmail', 'replyEmail', 'forwardEmail'])
 </script>
 
 <template>
@@ -68,12 +85,12 @@ watch(() => props.email, (newEmail) => {
     <div class="flex items-center gap-4 bg">
       <div class="flex p-1 rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
 
-        <button class="p-2 rounded-md transition-all" :class="darkMode
+        <button @click="$emit('archiveEmail')" class="p-2 rounded-md transition-all" :class="darkMode
           ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
           : 'text-gray-600 hover:bg-white shadow-sm'">
           <Archive :size="18" />
         </button>
-        <button class="p-2 rounded-md transition-all" :class="darkMode
+        <button @click="$emit('trashEmail')" class="p-2 rounded-md transition-all" :class="darkMode
           ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
           : 'text-gray-600 hover:bg-white shadow-sm'">
           <Trash2 :size="18" />
@@ -82,6 +99,20 @@ watch(() => props.email, (newEmail) => {
           ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
           : 'text-gray-600 hover:bg-white shadow-sm'">
           <Star :size="18" />
+        </button>
+        <button 
+          @click="sendToDify" 
+          :disabled="isSummarizing"
+          class="p-2 rounded-md transition-all flex items-center justify-center" 
+          :class="[
+            darkMode ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600' : 'text-gray-600 hover:bg-white shadow-sm',
+            isSummarizing ? 'opacity-70 cursor-not-allowed' : ''
+          ]"
+          title="Summarize with AI"
+        >
+          <Loader v-if="isSummarizing" :size="18" class="animate-spin" />
+          
+          <Clock v-else :size="18" />
         </button>
 
       </div>
@@ -226,7 +257,7 @@ watch(() => props.email, (newEmail) => {
             </div>
 
             <button class="p-2 text-gray-400 hover:text-blue-500 transition-colors">
-              <Download :size="18" @click="emailService.downloadAttachment(file, email.msg_id)" />
+              <Download :size="18" class="group-hover:text-blue-500" />
             </button>
           </div>
         </div>

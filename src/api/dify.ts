@@ -6,7 +6,21 @@ import {
 
 export default {
     async getSummary(req: DifySummaryRequest): Promise<DifyResponse> {
-        const response = await api.post<DifyResponse>('/dify/summary', req)
-        return response.data
+        try {
+            const response = await api.post<DifyResponse>('/dify/summary', req)
+            return response.data
+        } catch (error) {
+            console.error('Error getting Dify summary:', error)
+            throw error
+        }
+    },
+    async testSummary(req: DifySummaryRequest): Promise<any> {
+        try {
+            const response = await api.post<any>('/dify/test-summary', req)
+            return response.data
+        } catch (error) {
+            console.error('Error testing Dify summary:', error)
+            throw error
+        }
     }
 }

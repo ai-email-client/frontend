@@ -22,7 +22,7 @@ defineProps<{
   limit: number
 }>()
 
-defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
+defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
 </script>
 
 <template>
@@ -37,7 +37,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage'])
           <RotateCw :size="18" :class="{ 'animate-spin': loading }" />
         </button>
         <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'">Inbox</h2>
-        <button @click="$emit('refresh')" :disabled="loading"
+        <button @click="$emit('sendEmail')" :disabled="loading"
           class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
           <PenSquare :size="18" />
         </button>

@@ -2,17 +2,16 @@
 import { ref, onMounted, watch } from 'vue'
 
 const props = defineProps<{
-    content: string
+  content: string
 }>()
 
 const host = ref<HTMLElement | null>(null)
 
 const updateShadowDom = () => {
-    console.log('Sanitized Content Length:', props.content.length)
-    if (!host.value || !props.content) return
+  if (!host.value || !props.content) return
 
-    const shadow = host.value.shadowRoot || host.value.attachShadow({ mode: 'open' })
-    shadow.innerHTML = `
+  const shadow = host.value.shadowRoot || host.value.attachShadow({ mode: 'open' })
+  shadow.innerHTML = `
     <style>
       :host {
         display: block;
@@ -30,14 +29,14 @@ const updateShadowDom = () => {
 }
 
 onMounted(() => {
-    updateShadowDom()
+  updateShadowDom()
 })
 
 watch(() => props.content, () => {
-    updateShadowDom()
+  updateShadowDom()
 })
 </script>
 
 <template>
-    <div ref="host" class="email-shadow-host w-full"></div>
+  <div ref="host" class="email-shadow-host w-full"></div>
 </template>

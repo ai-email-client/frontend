@@ -18,6 +18,10 @@ import { CategoryMenuItem, EmailCategory } from '../interface/category'
 import { formatLabel } from '../utils';
 import { UserProfile } from '../interface/user';
 import { SpamType } from '../interface/spam';
+import { LogOut } from 'lucide-vue-next'
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
 
 defineProps<{
   user: UserProfile | null,
@@ -28,6 +32,11 @@ defineProps<{
 defineEmits(['toggleCollapse'])
 const toggleSubmenu = (item: any) => {
   item.isOpen = !item.isOpen
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('jwt_token')
+  router.push('/login')
 }
 
 const menuItems = ref<CategoryMenuItem[]>([
@@ -155,20 +164,26 @@ const menuItems = ref<CategoryMenuItem[]>([
     <div class="p-4 border-t" :class="darkMode ? 'border-gray-800' : 'border-gray-200'">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg">
+          class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg shrink-0">
           {{ user?.emailAddress?.charAt(0).toUpperCase() }}
         </div>
-        <div v-if="!collapsed" class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
-            {{ user?.emailAddress }}
-          </p>
-          <p class="text-xs truncate text-gray-500">{{ user?.emailAddress }}</p>
-        </div>
-        <!-- <router-link to="/settings" custom v-slot="{ navigate }">
-          <button v-if="!collapsed" @click="navigate" class="p-2 hover:bg-gray-200/20 rounded-lg">
-            <Settings :size="18" />
+
+        <div v-if="!collapsed" class="flex-1 min-w-0 flex items-center justify-between group">
+          <div class="flex-1 min-w-0 mr-2">
+            <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
+              {{ user?.emailAddress }}
+            </p>
+            <p class="text-xs truncate" :class="darkMode ? 'text-gray-500' : 'text-gray-500'">
+              User
+            </p>
+          </div>
+
+          <button @click="handleLogout" class="p-1.5 rounded-md transition-colors duration-200" :class="darkMode
+            ? 'text-gray-400 hover:text-red-400 hover:bg-gray-800'
+            : 'text-gray-500 hover:text-red-600 hover:bg-gray-100'" title="Logout">
+            <LogOut class="w-5 h-5" />
           </button>
-        </router-link> -->
+        </div>
       </div>
     </div>
 

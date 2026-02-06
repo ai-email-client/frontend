@@ -44,7 +44,7 @@ const totalMessage = ref(1)
 const fetchEmails = async () => {
   loading.value = true
 
-  const response = await emailService.fetchEmails(labels, limit, null)
+  const response = await emailService.fetchEmails(labels, limit, null, null)
   emails.value = response.messages
 
   pageToken.value = response.page_token
@@ -60,6 +60,7 @@ const getEmailById = async (msgId: string) => {
   isLoadingEmail.value = true
   const response = await emailService.getEmailById(msgId)
   selectedEmail.value = response
+
   isLoadingEmail.value = false
 }
 
@@ -67,7 +68,7 @@ const nextPage = async () => {
   loading.value = true
 
   const nextToken = stackToken.value[currentPage.value + 1]
-  const response = await emailService.fetchEmails(labels, limit, nextToken, true)
+  const response = await emailService.fetchEmails(labels, limit, nextToken, null, true)
 
   emails.value = response.messages
 
@@ -85,7 +86,7 @@ const prevPage = async () => {
   loading.value = true
 
   const prevToken = stackToken.value[currentPage.value - 1]
-  const response = await emailService.fetchEmails(labels, limit, prevToken, true)
+  const response = await emailService.fetchEmails(labels, limit, prevToken, null, true)
 
   emails.value = response.messages
 

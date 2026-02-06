@@ -1,13 +1,9 @@
 import { Sender } from "./email"
 
-export interface EmailSummaryRequest {
-    email_text: string
-}
-
 export interface DifySummaryRequest {
-    inputs: EmailSummaryRequest
-    user: string
-    response_mode: string
+    msg_id: string
+    plain_text: string
+    email_tags: string[]
 }
 
 export interface DifyResponse {

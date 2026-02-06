@@ -18,12 +18,14 @@ export default {
     async getEmails(
         limit: number = 10,
         labels: string[] = ["INBOX", "UNREAD"],
+        query: string | null = null,
         pageToken: string | null = null
     ) {
         try {
             const payload = {
                 limit: limit,
                 label: labels,
+                query: query,
                 page_token: pageToken
             }
 

@@ -13,12 +13,18 @@ const emailService = {
         labels: string[],
         limit: number,
         currentToken: string | null,
+        query: string | null,
         isLoadMore = false
     ): Promise<EmailShortList> => {
 
         const pageToken = isLoadMore ? currentToken : null
 
-        const data = await emailAPI.getEmails(limit, labels, pageToken)
+        const data = await emailAPI.getEmails(
+            limit,
+            labels,
+            query,
+            pageToken
+        )
 
         return {
             messages: data.messages,

@@ -43,13 +43,13 @@ const totalMessage = ref(0)
 const getCurrentLabel = () => {
   const currentCategoryName = route.params.category as string
 
-  return [labelStore.getLabelIdByName(currentCategoryName), "INBOX"]
+  return [labelStore.getLabelIdByName(currentCategoryName)]
 }
 
 const fetchEmails = async () => {
   loading.value = true
 
-  const response = await emailService.fetchEmails(getCurrentLabel(), limit, null)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, null, null)
   emails.value = response.messages
 
   pageToken.value = response.page_token
@@ -72,7 +72,7 @@ const nextPage = async () => {
   loading.value = true
 
   const nextToken = stackToken.value[currentPage.value + 1]
-  const response = await emailService.fetchEmails(getCurrentLabel(), limit, nextToken, true)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, nextToken, null, true)
 
   emails.value = response.messages
 
@@ -90,7 +90,7 @@ const prevPage = async () => {
   loading.value = true
 
   const prevToken = stackToken.value[currentPage.value - 1]
-  const response = await emailService.fetchEmails(getCurrentLabel(), limit, prevToken, true)
+  const response = await emailService.fetchEmails(getCurrentLabel(), limit, prevToken, null, true)
 
   emails.value = response.messages
 
