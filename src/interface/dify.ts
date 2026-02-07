@@ -6,7 +6,7 @@ export interface DifySummaryRequest {
     email_tags: string[]
 }
 
-export interface DifyResponse {
+export interface DifySummary {
     sender: Sender
     email_category: string
     date: string

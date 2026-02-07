@@ -1,5 +1,5 @@
 import {
-    DifyResponse,
+    DifySummary,
     DifySummaryRequest
 } from "../interface/dify"
 
@@ -8,7 +8,7 @@ import difyAPI from "../api/dify"
 const difyService = {
     async getSummary(
         req: DifySummaryRequest
-    ): Promise<DifyResponse> {
+    ): Promise<DifySummary> {
         const response = await difyAPI.getSummary(req)
         return response
     },

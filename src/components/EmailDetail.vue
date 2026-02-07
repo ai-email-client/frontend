@@ -37,7 +37,7 @@ const isSummarizing = ref(false)
 
 const sendToDify = async () => {
   if (!props.email || isSummarizing.value) return
-  
+
   isSummarizing.value = true
 
   const req = {
@@ -45,9 +45,7 @@ const sendToDify = async () => {
     plain_text: props.email.plain_text || '',
     email_tags: props.email.tag
   }
-
-  const response = await difyService.testSummary(req)
-  console.log('Dify response:', response)
+  difyService.testSummary(req)
 
   isSummarizing.value = false
 }
@@ -76,7 +74,7 @@ watch(() => props.email, (newEmail) => {
 
 }, { immediate: true })
 
-defineEmits(['sendEmail', 'archiveEmail','trashEmail', 'replyEmail', 'forwardEmail'])
+defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEmail'])
 </script>
 
 <template>
@@ -100,18 +98,13 @@ defineEmits(['sendEmail', 'archiveEmail','trashEmail', 'replyEmail', 'forwardEma
           : 'text-gray-600 hover:bg-white shadow-sm'">
           <Star :size="18" />
         </button>
-        <button 
-          @click="sendToDify" 
-          :disabled="isSummarizing"
-          class="p-2 rounded-md transition-all flex items-center justify-center" 
-          :class="[
+        <button @click="sendToDify" :disabled="isSummarizing"
+          class="p-2 rounded-md transition-all flex items-center justify-center" :class="[
             darkMode ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600' : 'text-gray-600 hover:bg-white shadow-sm',
             isSummarizing ? 'opacity-70 cursor-not-allowed' : ''
-          ]"
-          title="Summarize with AI"
-        >
+          ]" title="Summarize with AI">
           <Loader v-if="isSummarizing" :size="18" class="animate-spin" />
-          
+
           <Clock v-else :size="18" />
         </button>
 

@@ -1,13 +1,13 @@
 import api from "./api"
 import {
-    DifyResponse,
+    DifySummary,
     DifySummaryRequest
 } from "../interface/dify"
 
 export default {
-    async getSummary(req: DifySummaryRequest): Promise<DifyResponse> {
+    async getSummary(req: DifySummaryRequest): Promise<DifySummary> {
         try {
-            const response = await api.post<DifyResponse>('/dify/summary', req)
+            const response = await api.post<DifySummary>('/dify/summary', req)
             return response.data
         } catch (error) {
             console.error('Error getting Dify summary:', error)
