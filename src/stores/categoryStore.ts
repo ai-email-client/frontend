@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Category, CategoryListResponse } from '../interface/category'
+import { Category, CategoryEnum} from '../interface/category'
 import emailService from '../services/email'
-import { EmailCategory } from '../interface/category'
+import { CategoryListResponse } from '../interface/response'
 
 export const useLabelStore = defineStore('labels', () => {
     const categoryLabels = ref<Record<string, Category>>({})
@@ -11,40 +11,58 @@ export const useLabelStore = defineStore('labels', () => {
 
     const initialize = async () => {
         if (isReady.value) return
+            try {
+                const response: CategoryListResponse = await emailService.getLabels()
+                const currentCategories = response.categories || []
 
-        try {
-            const response: CategoryListResponse = await emailService.getLabels()
-            rawLabels.value = response.categories || []
+                const categoryMap = new Map<string, Category>()
+                
+                currentCategories.forEach((cat) => {
+                    if (cat.name) {
+                        categoryMap.set(cat.name.toLowerCase(), cat)
+                    }
+                })
 
-            const missingCategories: string[] = []
-            Object.values(EmailCategory).forEach((catEnum) => {
-                const found = rawLabels.value.find((l) =>
-                    l.name.toLowerCase() === catEnum.toLowerCase()
-                )
+                const missingCategories: string[] = []
+                
+                Object.values(CategoryEnum).forEach((catEnum) => {
+                    const key = catEnum.toLowerCase()
+                    const foundCategory = categoryMap.get(key)
 
-                if (found) {
-                    categoryLabels.value[catEnum.toLowerCase()] = found
-                } else {
-                    missingCategories.push(catEnum)
+                    if (foundCategory) {
+                        categoryLabels.value[key] = foundCategory
+                    } else {
+                        missingCategories.push(catEnum)
+                    }
+                })
+
+                let newCategories: Category[] = []
+                if (missingCategories.length > 0) {
+                    console.log(`Syncing missing labels: ${missingCategories.join(', ')}`)
+                    try {
+                        const syncResponse = await emailService.syncLabels(missingCategories)
+                        if (syncResponse && syncResponse.categories) {
+                            newCategories = syncResponse.categories
+                            
+                            // อัปเดต Map และ State ทันที
+                            newCategories.forEach(cat => {
+                                if (cat.name) {
+                                    categoryLabels.value[cat.name.toLowerCase()] = cat
+                                }
+                            })
+                        }
+                    } catch (syncError) {
+                        console.error("Sync Labels Failed (Non-blocking):", syncError)
+                    }
                 }
-            })
 
-            if (missingCategories.length > 0) {
-                console.log(`Syncing missing labels: ${missingCategories.join(', ')}`)
-                const newLabels = await emailService.syncLabels(missingCategories)
-                if (newLabels) {
-                    rawLabels.value.push(...newLabels.categories)
-                    newLabels.categories.forEach(l => {
-                        categoryLabels.value[l.name.toLowerCase()] = l
-                    })
-                }
+                rawLabels.value = [...currentCategories, ...newCategories]
+
+            } catch (error) {
+                console.error("Store Init Failed:", error)
+            } finally {
+                isReady.value = true 
             }
-
-            isReady.value = true
-
-        } catch (error) {
-            console.error("Store Init Failed:", error)
-        }
     }
 
     const getLabelIdByName = (name: string) => {

@@ -1,5 +1,5 @@
 import api from './api'
-import { LoginResponse } from '../interface/auth'
+import { LoginResponse } from '../interface/response'
 
 export default {
     async loginByGoogle() {

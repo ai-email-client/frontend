@@ -14,16 +14,19 @@ import {
     computed
 } from 'vue'
 import {
-    EmailSummary
-} from '../interface/email';
+    DifySummary
+} from '../interface/dify';
 
 
 const props = defineProps<{
-    data: EmailSummary,
+    data: DifySummary,
     darkMode: boolean
 }>()
 
 const confidenceColor = computed(() => {
+    if (!props.data.confidence && props.data.confidence !== 0) {
+        return ''
+    }
     const score = props.data.confidence
     if (score >= 0.8) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400'
     if (score >= 0.5) return 'text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400'
@@ -31,6 +34,9 @@ const confidenceColor = computed(() => {
 })
 
 const confidenceLabel = computed(() => {
+    if (!props.data.confidence && props.data.confidence !== 0) {
+        return '0%'
+    }
     return Math.round(props.data.confidence * 100) + '%'
 })
 </script>
@@ -53,7 +59,7 @@ const confidenceLabel = computed(() => {
             </div>
 
             <div class="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold" :class="confidenceColor">
-                <ShieldCheck v-if="data.confidence >= 0.8" :size="14" />
+                <ShieldCheck v-if="data.confidence !== null && data.confidence >= 0.8" :size="14" />
                 <AlertTriangle v-else :size="14" />
                 <span>Confidence: {{ confidenceLabel }}</span>
             </div>
@@ -113,7 +119,7 @@ const confidenceLabel = computed(() => {
                 class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t"
                 :class="darkMode ? 'border-gray-800' : 'border-gray-100'">
 
-                <div v-if="data.instructions.length > 0">
+                <div v-if="data.instructions && data.instructions.length > 0">
                     <h4 class="flex items-center gap-2 text-xs font-bold uppercase mb-3 text-gray-500">
                         <ListTodo :size="16" /> Instructions
                     </h4>
@@ -126,7 +132,7 @@ const confidenceLabel = computed(() => {
                     </ul>
                 </div>
 
-                <div v-if="data.required_items.length > 0">
+                <div v-if="data.required_items && data.required_items.length > 0">
                     <h4 class="flex items-center gap-2 text-xs font-bold uppercase mb-3 text-gray-500">
                         <Briefcase :size="16" /> Required Items
                     </h4>

@@ -1,18 +1,22 @@
 import api from './api'
 
-import type {
-    Email,
-    EmailShortList,
-    MessageModify,
-    Attachment,
-    MessageBatchModify
-} from '../interface/email'
+import { 
+    MessageBatchModifyLabelRequest, MessageModifyLabelRequest 
+} from '../interface/request'
+import { 
+    EmailDetailResponse, EmailFetchResponse ,
+    CategoryListResponse
 
-import {
+} from '../interface/response'
+import { 
+    Attachment
+
+} from '../interface/email'
+import { 
     Category,
-    CategoryListResponse,
-    CreateLabelResponse
 } from '../interface/category'
+
+
 
 export default {
     async getEmails(
@@ -29,7 +33,7 @@ export default {
                 page_token: pageToken
             }
 
-            const response = await api.post<EmailShortList>('/email/messages', payload)
+            const response = await api.post<EmailFetchResponse>('/email/messages', payload)
             return response.data
 
         } catch (error) {
@@ -43,7 +47,7 @@ export default {
             const payload = {
                 msg_id: id
             }
-            const response = await api.post<Email>('/email/message/get', payload)
+            const response = await api.post<EmailDetailResponse>('/email/message/get', payload)
 
             return response.data
 
@@ -94,7 +98,7 @@ export default {
 
                 body: body
             }
-            const response = await api.post<CreateLabelResponse>('/email/label/create', payload)
+            const response = await api.post<Category>('/email/label/create', payload)
             return response.data
         } catch (error) {
             throw error
@@ -122,12 +126,11 @@ export default {
         }
     },
 
-    async messageModify(body: MessageModify) {
+    async messageModify(body: MessageModifyLabelRequest) {
         try {
 
 
             const payload = {
-
                 body
             }
             const response = await api.post<CategoryListResponse>('/email/message/modify', payload)
@@ -137,7 +140,7 @@ export default {
         }
     },
 
-    async messageBatchModify(body: MessageBatchModify) {
+    async messageBatchModify(body: MessageBatchModifyLabelRequest) {
         try {
             const payload = {
 

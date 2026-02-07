@@ -8,9 +8,9 @@ import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 
 import {
-    Email,
-    EmailShortDetail
-} from '../interface/email'
+    EmailDetailResponse,
+    EmailShortResponse,
+} from '../interface/response'
 
 import emailService from '../services/email'
 
@@ -23,8 +23,8 @@ const loading = ref(false)
 const labels = ["TRASH"]
 const limit = 5
 
-const emails = ref<EmailShortDetail[]>([])
-const selectedEmail = ref<Email | null>(null)
+const emails = ref<EmailShortResponse[]>([])
+const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
 
 const pageToken = ref<string | null>(null)
@@ -35,64 +35,64 @@ const currentPage = ref(0)
 const totalMessage = ref(1)
 
 const fetchEmails = async () => {
-    loading.value = true
+  loading.value = true
 
-    const response = await emailService.fetchEmails(labels, limit, null)
-    emails.value = response.messages
+  const response = await emailService.fetchEmails(labels, limit, null, null)
+  emails.value = response.messages
 
-    pageToken.value = response.page_token
-    stackToken.value.push(response.page_token)
+  pageToken.value = response.page_token
+  stackToken.value.push(response.page_token)
 
-    loading.value = false
+  loading.value = false
 }
 
 const getEmailById = async (msgId: string) => {
-    if (!msgId) {
-        return
-    }
-    isLoadingEmail.value = true
-    const response = await emailService.getEmailById(msgId)
-    selectedEmail.value = response
-    isLoadingEmail.value = false
+  if (!msgId) {
+    return
+  }
+  isLoadingEmail.value = true
+  const response = await emailService.getEmailById(msgId)
+  selectedEmail.value = response
+  isLoadingEmail.value = false
 }
 
 const nextPage = async () => {
-    loading.value = true
+  loading.value = true
 
-    const nextToken = stackToken.value[currentPage.value + 1]
-    const response = await emailService.fetchEmails(labels, limit, nextToken, true)
+  const nextToken = stackToken.value[currentPage.value + 1]
+  const response = await emailService.fetchEmails(labels, limit, nextToken, null, true)
 
-    emails.value = response.messages
+  emails.value = response.messages
 
-    if (response.page_token && !stackToken.value.includes(response.page_token)) {
-        stackToken.value.push(response.page_token)
-    }
-    currentPage.value++
+  if (response.page_token && !stackToken.value.includes(response.page_token)) {
+    stackToken.value.push(response.page_token)
+  }
+  currentPage.value++
 
 
 
-    loading.value = false
+  loading.value = false
 }
 
 const prevPage = async () => {
-    loading.value = true
+  loading.value = true
 
-    const prevToken = stackToken.value[currentPage.value - 1]
-    const response = await emailService.fetchEmails(labels, limit, prevToken, true)
+  const prevToken = stackToken.value[currentPage.value - 1]
+  const response = await emailService.fetchEmails(labels, limit, prevToken, null, true)
 
-    emails.value = response.messages
+  emails.value = response.messages
 
-    currentPage.value--
-    loading.value = false
+  currentPage.value--
+  loading.value = false
 }
 
 const getTotalMessage = async () => {
-    loading.value = true
-    const response = await emailService.getLabelById(labels[0])
-    if (response.messagesTotal) {
-        totalMessage.value = response.messagesTotal
-    }
-    loading.value = false
+  loading.value = true
+  const response = await emailService.getLabelById(labels[0])
+  if (response.messagesTotal) {
+    totalMessage.value = response.messagesTotal
+  }
+  loading.value = false
 }
 
 onMounted(() => {

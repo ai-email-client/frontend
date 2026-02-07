@@ -1,26 +1,27 @@
-import { Sender } from "./email"
+import { Sender } from './email';
 
-export interface DifySummaryRequest {
-    msg_id: string
-    plain_text: string
-    email_tags: string[]
+export enum Status {
+  new = "new",
+  processing = "processing",
+  done = "done",
+  error = "error",
 }
 
 export interface DifySummary {
-    sender: Sender
-    email_category: string
-    date: string
-    time: string
-    location: string
-    instructions: string[] | null
-    required_items: string[] | null
-    summary: string
-    is_spam: boolean
-    is_threat: boolean
-    spam_type: string | null
-    spam_confidence: number
-    security_type: string
-    security_confidence: number
-    extraction_status: string
-    confidence: number
+  sender: Sender | null;
+  email_category: string | null;
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  instructions: string[] | null;
+  required_items: string[] | null;
+  summary: string | null;
+  is_spam: boolean | null;
+  is_threat: boolean | null;
+  spam_type: string | null;
+  spam_confidence: number | null;
+  security_type: string | null;
+  security_confidence: number | null;
+  extraction_status: string | null;
+  confidence: number | null;
 }

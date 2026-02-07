@@ -16,16 +16,15 @@ import {
   File, Download, FileCode, FileText,
   Loader
 } from 'lucide-vue-next'
-import {
-  Email,
-} from '../interface/email'
+
 
 import EmailShadow from './EmailShadow.vue'
 
 import difyService from '../services/dify'
+import { EmailDetailResponse } from '../interface/response';
 
 const props = defineProps<{
-  email: Email | null,
+  email: EmailDetailResponse | null,
   loading: boolean,
   darkMode: boolean
 }>()

@@ -9,9 +9,9 @@ import EmailDetail from '../components/EmailDetail.vue'
 import type { UserProfile } from '../interface/user'
 
 import {
-  Email,
-  EmailShortDetail
-} from '../interface/email'
+  EmailShortResponse,
+  EmailDetailResponse
+} from '../interface/response'
 import emailService from '../services/email'
 
 const props = defineProps({
@@ -30,8 +30,8 @@ const loading = ref(false)
 const labels = ["INBOX"]
 const limit = 5
 
-const emails = ref<EmailShortDetail[]>([])
-const selectedEmail = ref<Email | null>(null)
+const emails = ref<EmailShortResponse[]>([])
+const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
 
 const pageToken = ref<string | null>(null)

@@ -7,14 +7,13 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-vue-next'
-
-import {
-  EmailShortDetail
-} from '../interface/email'
+import { 
+  EmailShortResponse 
+} from '../interface/response';
 
 defineProps<{
-  emails: EmailShortDetail[],
-  selectedEmail: EmailShortDetail | null,
+  emails: EmailShortResponse[],
+  selectedEmail: EmailShortResponse | null,
   darkMode: boolean,
   loading: boolean
   currentPage: number

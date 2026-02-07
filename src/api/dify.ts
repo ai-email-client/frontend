@@ -1,8 +1,10 @@
 import api from "./api"
 import {
-    DifySummary,
-    DifySummaryRequest
+    DifySummary
 } from "../interface/dify"
+import {
+    DifySummaryRequest
+} from "../interface/request"
 
 export default {
     async getSummary(req: DifySummaryRequest): Promise<DifySummary> {

@@ -11,9 +11,9 @@ import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 
 import {
-  Email,
-  EmailShortDetail
-} from '../interface/email'
+  EmailShortResponse,
+  EmailDetailResponse
+} from '../interface/response'
 
 import { useLabelStore } from '../stores/categoryStore'
 import emailService from '../services/email'
@@ -29,8 +29,8 @@ const loading = ref(false)
 
 const limit = 5
 
-const emails = ref<EmailShortDetail[]>([])
-const selectedEmail = ref<Email | null>(null)
+const emails = ref<EmailShortResponse[]>([])
+const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
 
 const pageToken = ref<string | null>(null)
@@ -43,7 +43,7 @@ const totalMessage = ref(0)
 const getCurrentLabel = () => {
   const currentCategoryName = route.params.category as string
 
-  return [labelStore.getLabelIdByName(currentCategoryName)]
+  return [labelStore.getLabelIdByName(currentCategoryName)|| 'INBOX']
 }
 
 const fetchEmails = async () => {
@@ -123,7 +123,7 @@ onMounted(() => {
   <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
     <div class="flex flex-1 overflow-hidden relative">
       <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-        @select="(email: EmailShortDetail) => getEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
+        @select="(email: EmailShortResponse) => getEmailById(email.msg_id)" @refresh="fetchEmails" @prevPage="prevPage"
         @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
       <div

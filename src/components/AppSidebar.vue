@@ -14,7 +14,7 @@ import {
 
 import { ref } from 'vue'
 
-import { CategoryMenuItem, EmailCategory } from '../interface/category'
+import { CategoryMenuItem, CategoryEnum } from '../interface/category'
 import { formatLabel } from '../utils';
 import { UserProfile } from '../interface/user';
 import { SpamType } from '../interface/spam';
@@ -51,7 +51,7 @@ const menuItems = ref<CategoryMenuItem[]>([
     label: 'Category',
     badge: 0,
     isOpen: false,
-    children: Object.values(EmailCategory).map((category) => ({
+    children: Object.values(CategoryEnum).map((category) => ({
       label: formatLabel(category),
       to: `/category/${category}`
     }))
@@ -119,7 +119,7 @@ const menuItems = ref<CategoryMenuItem[]>([
             ]">
             <component :is="item.icon" :size="20" />
             <span v-if="!collapsed" class="font-medium flex-1">{{ item.label }}</span>
-            <span v-if="!collapsed && item.badge > 0" class="ml-auto text-xs px-2 py-1 rounded-full"
+            <span v-if="!collapsed && item.badge && item.badge > 0" class="ml-auto text-xs px-2 py-1 rounded-full"
               :class="darkMode ? 'bg-gray-800' : 'bg-gray-200'">
               {{ item.badge }}
             </span>
