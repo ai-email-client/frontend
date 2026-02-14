@@ -2,6 +2,16 @@ import { DifySummary } from './dify';
 import { Attachment } from './email';
 import { Category } from './category';
 
+export interface AttachmentResponse {
+  mimeType: string;
+  size: number;
+  attachmentId?: string | null;
+}
+
+export interface CreateLabelResponse {
+  category: Category;
+}
+
 export interface CredentialResponse {
   access_token: string;
   refresh_token: string;
@@ -46,7 +56,7 @@ export interface EmailShortResponse {
 }
 
 export interface EmailFetchResponse {
-  page_token: string | null;
+  page_token: string | '';
   messages: EmailShortResponse[];
 }
 

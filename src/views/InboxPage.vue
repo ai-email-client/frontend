@@ -12,7 +12,9 @@ import {
   EmailShortResponse,
   EmailDetailResponse
 } from '../interface/response'
+
 import emailService from '../services/email'
+import difyService from '../services/dify'
 
 const props = defineProps({
   user: {
@@ -36,7 +38,7 @@ const isLoadingEmail = ref(false)
 
 const pageToken = ref<string | null>(null)
 
-const stackToken = ref<string[]>([''])
+const stackToken = ref<string[]>([])
 const currentPage = ref(0)
 
 const totalMessage = ref(1)
@@ -44,13 +46,31 @@ const totalMessage = ref(1)
 const fetchEmails = async () => {
   loading.value = true
 
-  const response = await emailService.fetchEmails(labels, limit, null, null)
-  emails.value = response.messages
+  const newEmails = await emailService.fetchEmails(labels, limit, null, null)
 
-  pageToken.value = response.page_token
-  stackToken.value.push(response.page_token)
+  emails.value = newEmails.messages
+  pageToken.value = newEmails.page_token
+  stackToken.value.push(newEmails.page_token)
 
   loading.value = false
+
+  newEmails.messages.forEach(async (email: EmailShortResponse) => {
+    const emailDetail = await emailService.getEmailById(email.msg_id)
+    triggerSummaryInBackground(emailDetail)
+  })
+}
+
+const triggerSummaryInBackground = (email: EmailDetailResponse) => {
+  const req = {
+    msg_id: email.msg_id,
+    plain_text: email.plain_text,
+    email_tags: email.tag
+  }
+  difyService.testSummary(req).then((res) => {
+    console.log('Summary triggered for email:', res)
+  }).catch((err) => {
+    console.error('Error triggering summary for email:', email.msg_id, err)
+  })
 }
 
 const getEmailById = async (msgId: string) => {
@@ -105,6 +125,8 @@ const getTotalMessage = async () => {
   }
   loading.value = false
 }
+
+
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {

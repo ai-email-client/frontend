@@ -44,7 +44,6 @@ export const useLabelStore = defineStore('labels', () => {
                         if (syncResponse && syncResponse.categories) {
                             newCategories = syncResponse.categories
                             
-                            // อัปเดต Map และ State ทันที
                             newCategories.forEach(cat => {
                                 if (cat.name) {
                                     categoryLabels.value[cat.name.toLowerCase()] = cat

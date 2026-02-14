@@ -1,12 +1,18 @@
 import type {
     Attachment,
-    AttachmentResponse,
-    Email,
-    EmailShortList
 } from '../interface/email'
+import { 
+    Category 
+} from '../interface/category'
+import{
+    AttachmentResponse,
+    CreateLabelResponse,
+    CategoryListResponse,
+    EmailDetailResponse,
+    EmailFetchResponse,
+} from '../interface/response'
 
 import emailAPI from '../api/email'
-import { Category, CategoryListResponse, CreateLabelResponse } from '../interface/category'
 
 const emailService = {
     fetchEmails: async (
@@ -15,7 +21,7 @@ const emailService = {
         currentToken: string | null,
         query: string | null,
         isLoadMore = false
-    ): Promise<EmailShortList> => {
+    ): Promise<EmailFetchResponse> => {
 
         const pageToken = isLoadMore ? currentToken : null
 
@@ -33,7 +39,7 @@ const emailService = {
     },
     getEmailById: async (
         msgId: string
-    ): Promise<Email> => {
+    ): Promise<EmailDetailResponse> => {
         if (!msgId) {
             throw new Error('Message ID is required')
         }
@@ -92,7 +98,8 @@ const emailService = {
     ): Promise<CreateLabelResponse> => {
         try {
             const data = await emailAPI.createLabel(body)
-            return data
+            const res = { category: data }
+            return res
         } catch (err) {
             console.error('Fetch error:', err)
             throw err
