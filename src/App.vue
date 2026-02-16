@@ -20,19 +20,18 @@ import AppSidebar from './components/AppSidebar.vue'
 import userService from './services/user'
 import { UserProfile } from './interface/user'
 import { useLabelStore } from './stores/categoryStore'
+import databaseService from './services/database'
 
 const route = useRoute()
 const router = useRouter()
 const labelStore = useLabelStore()
 
-// State
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
 const user = ref<UserProfile | null>(null)
 
 const isAppLoading = ref(true)
 
-// Computed
 const showLayout = computed(() => {
   const hiddenLayoutPages = ['Home', 'Login', 'Callback']
   return !hiddenLayoutPages.includes(route.name as string)
@@ -85,6 +84,12 @@ const handleLogout = () => {
 onMounted(async () => {
   await router.isReady()
   await handleAuthCheck()
+  if (user.value) {
+    const res = await databaseService.get_user_pin(user.value.emailAddress)
+    if (res) {
+      console.log(res)
+    }
+  }
 })
 
 watch(

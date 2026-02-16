@@ -9,6 +9,10 @@ const userService = {
 
         const response = await userAPI.get_profile()
         return response
+    },
+    async setup_pin(pin: string) {
+        const response = await userAPI.setup_pin(pin)
+        return response
     }
 }
 

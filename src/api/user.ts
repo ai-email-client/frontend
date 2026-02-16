@@ -11,5 +11,13 @@ export default {
         } catch (error) {
             throw error
         }
+    },
+    async setup_pin(pin: string) {
+        try {
+            const response = await api.post('/user/setup-pin', { pin })
+            return response.data
+        } catch (error) {
+            throw error
+        }
     }
 }

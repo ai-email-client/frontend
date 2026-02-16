@@ -1,7 +1,12 @@
 import {
-    DifySummary,
-    DifySummaryRequest
+    DifySummary
 } from "../interface/dify"
+
+import {
+    DifySummaryRequest
+} from "../interface/request"
+
+
 
 import difyAPI from "../api/dify"
 

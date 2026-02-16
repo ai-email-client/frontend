@@ -63,10 +63,10 @@ const fetchEmails = async () => {
 const triggerSummaryInBackground = (email: EmailDetailResponse) => {
   const req = {
     msg_id: email.msg_id,
-    plain_text: email.plain_text,
-    email_tags: email.tag
+    plain_text: email.plain_text || "",
+    email_tags: email.tag || []
   }
-  difyService.testSummary(req).then((res) => {
+  difyService.getSummary(req).then((res) => {
     console.log('Summary triggered for email:', res)
   }).catch((err) => {
     console.error('Error triggering summary for email:', email.msg_id, err)
