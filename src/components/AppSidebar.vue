@@ -53,7 +53,7 @@ const menuItems = ref<CategoryMenuItem[]>([
     isOpen: false,
     children: Object.values(CategoryEnum).map((category) => ({
       label: formatLabel(category),
-      to: `/category/${category}`
+      to: `/category/${category.toLowerCase()}`
     }))
   },
   {
@@ -64,7 +64,7 @@ const menuItems = ref<CategoryMenuItem[]>([
     isOpen: false,
     children: Object.values(SpamType).map((spamType) => ({
       label: formatLabel(spamType),
-      to: `/spam/${spamType}`
+      to: `/spam/${spamType.toLowerCase()}`
     }))
   },
   {
@@ -172,9 +172,6 @@ const menuItems = ref<CategoryMenuItem[]>([
           <div class="flex-1 min-w-0 mr-2">
             <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
               {{ user?.emailAddress }}
-            </p>
-            <p class="text-xs truncate" :class="darkMode ? 'text-gray-500' : 'text-gray-500'">
-              User
             </p>
           </div>
 

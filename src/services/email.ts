@@ -1,10 +1,10 @@
 import type {
     Attachment,
 } from '../interface/email'
-import { 
-    Category 
+import {
+    Category
 } from '../interface/category'
-import{
+import {
     AttachmentResponse,
     CreateLabelResponse,
     CategoryListResponse,
@@ -13,6 +13,7 @@ import{
 } from '../interface/response'
 
 import emailAPI from '../api/email'
+import { MessageModifyLabelRequest } from '../interface/request'
 
 const emailService = {
     fetchEmails: async (
@@ -129,6 +130,16 @@ const emailService = {
         try {
             const data = await emailAPI.initLabel()
             return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    messageModify: async (
+        req: MessageModifyLabelRequest
+    ): Promise<void> => {
+        try {
+            await emailAPI.messageModify(req)
         } catch (err) {
             console.error('Fetch error:', err)
             throw err

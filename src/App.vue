@@ -15,12 +15,10 @@ import {
   Moon,
   Loader2
 } from 'lucide-vue-next'
-
 import AppSidebar from './components/AppSidebar.vue'
 import userService from './services/user'
 import { UserProfile } from './interface/user'
 import { useLabelStore } from './stores/categoryStore'
-import databaseService from './services/database'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +34,17 @@ const showLayout = computed(() => {
   const hiddenLayoutPages = ['Home', 'Login', 'Callback']
   return !hiddenLayoutPages.includes(route.name as string)
 })
+
+const handleUser = async () => {
+  if (!user.value) {
+    try {
+      user.value = await userService.get_profile()
+    } catch (error) {
+      handleLogout()
+      return
+    }
+  }
+}
 
 const handleAuthCheck = async () => {
   const publicPages = ['Login', 'Callback']
@@ -56,17 +65,6 @@ const handleAuthCheck = async () => {
     return
   }
 
-  if (!user.value) {
-    try {
-      user.value = await userService.get_profile()
-
-      await labelStore.initialize()
-    } catch (error) {
-      handleLogout()
-      return
-    }
-  }
-
   if (route.path === '/' || route.name === 'Login') {
     router.replace('/inbox')
   }
@@ -84,12 +82,8 @@ const handleLogout = () => {
 onMounted(async () => {
   await router.isReady()
   await handleAuthCheck()
-  if (user.value) {
-    const res = await databaseService.get_user_pin(user.value.emailAddress)
-    if (res) {
-      console.log(res)
-    }
-  }
+  await handleUser()
+  await labelStore.initialize()
 })
 
 watch(
@@ -100,6 +94,7 @@ watch(
     }
   }
 )
+
 </script>
 
 <template>

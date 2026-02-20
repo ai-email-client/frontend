@@ -45,7 +45,7 @@ export interface Category {
 }
 
 export interface CategoryMenuItem {
-  icon?: LucideIcon; 
+  icon?: LucideIcon;
   label: string;
   to?: string;
   badge: number | 0;

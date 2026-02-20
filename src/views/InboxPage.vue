@@ -15,6 +15,8 @@ import {
 
 import emailService from '../services/email'
 import difyService from '../services/dify'
+import userService from '../services/user'
+import { DifySummaryRequest } from '../interface/request'
 
 const props = defineProps({
   user: {
@@ -36,104 +38,109 @@ const emails = ref<EmailShortResponse[]>([])
 const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
 
-const pageToken = ref<string | null>(null)
+const nextPageToken = ref<string | null>(null)
 
-const stackToken = ref<string[]>([])
+const stackToken = ref<(string | null)[]>([null])
 const currentPage = ref(0)
 
 const totalMessage = ref(1)
 
-const fetchEmails = async () => {
+const fetchEmails = async (
+  labels: string[],
+  limit: number,
+  pageToken: string | null,
+  q: string | null,
+  is_next: boolean = false
+) => {
   loading.value = true
+  selectedEmail.value = null
 
-  const newEmails = await emailService.fetchEmails(labels, limit, null, null)
+  try {
+    const newEmails = await emailService.fetchEmails(labels, limit, pageToken, q, is_next)
 
-  emails.value = newEmails.messages
-  pageToken.value = newEmails.page_token
-  stackToken.value.push(newEmails.page_token)
+    emails.value = newEmails.messages
+    nextPageToken.value = newEmails.page_token
 
-  loading.value = false
-
-  newEmails.messages.forEach(async (email: EmailShortResponse) => {
-    const emailDetail = await emailService.getEmailById(email.msg_id)
-    triggerSummaryInBackground(emailDetail)
-  })
+    loading.value = false
+    for (const email of newEmails.messages) {
+      const emailDetail = await emailService.getEmailById(email.msg_id)
+      await triggerSummaryInBackground(emailDetail)
+    }
+  } catch (error) {
+    console.error("Failed to fetch emails", error)
+  }
 }
 
 const triggerSummaryInBackground = (email: EmailDetailResponse) => {
-  const req = {
+  const req: DifySummaryRequest = {
+    sender: email.sender,
     msg_id: email.msg_id,
     plain_text: email.plain_text || "",
     email_tags: email.tag || []
   }
-  difyService.getSummary(req).then((res) => {
-    console.log('Summary triggered for email:', res)
-  }).catch((err) => {
-    console.error('Error triggering summary for email:', email.msg_id, err)
-  })
+  difyService.getSummary(req)
+
 }
 
 const getEmailById = async (msgId: string) => {
-  if (!msgId) {
-    return
-  }
+  if (!msgId) return
   isLoadingEmail.value = true
   const response = await emailService.getEmailById(msgId)
   selectedEmail.value = response
-
   isLoadingEmail.value = false
 }
 
 const nextPage = async () => {
-  loading.value = true
-
-  const nextToken = stackToken.value[currentPage.value + 1]
-  const response = await emailService.fetchEmails(labels, limit, nextToken, null, true)
-
-  emails.value = response.messages
-
-  if (response.page_token && !stackToken.value.includes(response.page_token)) {
-    stackToken.value.push(response.page_token)
+  if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) {
+    return
   }
+
   currentPage.value++
+  emails.value = []
 
-  selectedEmail.value = null
+  const targetPage = currentPage.value
+  let tokenToUse: string | null = null
 
-  loading.value = false
+  if (targetPage < stackToken.value.length) {
+    tokenToUse = stackToken.value[targetPage]
+  }
+  else {
+    tokenToUse = nextPageToken.value
+  }
+
+  await fetchEmails(labels, limit, tokenToUse, null, true)
+
+  if (targetPage >= stackToken.value.length) {
+    stackToken.value.push(tokenToUse)
+  }
+
 }
 
 const prevPage = async () => {
-  loading.value = true
-
-  const prevToken = stackToken.value[currentPage.value - 1]
-  const response = await emailService.fetchEmails(labels, limit, prevToken, null, true)
-
-  emails.value = response.messages
+  if (currentPage.value === 0) return
 
   currentPage.value--
+  emails.value = []
 
-  selectedEmail.value = null
+  const targetPage = currentPage.value
+  const tokenToUse = stackToken.value[targetPage]
 
-  loading.value = false
+  await fetchEmails(labels, limit, tokenToUse, null, true)
+
 }
 
 const getTotalMessage = async () => {
   loading.value = true
-  const response = await emailService.getLabelById(labels[0])
+  const response = await userService.get_profile()
   if (response.messagesTotal) {
     totalMessage.value = response.messagesTotal
   }
   loading.value = false
 }
 
-
-
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
-    fetchEmails()
-    if (emails.value.length > 0) {
-      getEmailById(emails.value[0].msg_id)
-    }
+    fetchEmails(labels, limit, stackToken.value[0], null)
   }
   getTotalMessage()
 })
@@ -144,7 +151,8 @@ onMounted(() => {
   <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
     <div class="flex flex-1 overflow-hidden relative">
       <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-        @select="(msgId: string) => getEmailById(msgId)" @refresh="fetchEmails" @prevPage="prevPage"
+        @select="(msgId: string) => getEmailById(msgId)"
+        @refresh="() => fetchEmails(labels, limit, stackToken[currentPage], null)" @prevPage="prevPage"
         @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
       <div

@@ -7,6 +7,7 @@ export interface UserRequest {
 }
 
 export interface DifySummaryRequest {
+  sender: string;
   msg_id: string;
   plain_text: string;
   email_tags: string[];

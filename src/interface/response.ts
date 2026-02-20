@@ -1,11 +1,31 @@
 import { DifySummary } from './dify';
-import { Attachment } from './email';
+import { Attachment, Sender } from './email';
 import { Category } from './category';
 
 export interface AttachmentResponse {
   mimeType: string;
   size: number;
   attachmentId?: string | null;
+}
+
+export interface EmailAnalysisResponse {
+  sender: Sender;
+  source_email_id: string;
+  confidence: number;
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  email_category: string;
+  summary: string;
+  extraction_status: string;
+  instructions: string[];
+  required_items: string[];
+  is_spam: boolean;
+  spam_confidence: number;
+  spam_type: string | null;
+  is_threat: boolean;
+  security_confidence: number;
+  security_type: string | null;
 }
 
 export interface CreateLabelResponse {
@@ -87,5 +107,5 @@ export interface CategoryListResponse {
   categories: Category[];
 }
 export interface LoginResponse {
-    url: string
+  url: string
 }

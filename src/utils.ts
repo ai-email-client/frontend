@@ -29,3 +29,52 @@ export function formatSize(bytes: number) {
 export const formatLabel = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }
+
+export const senderFormat = (sender: string) => {
+    const match = sender.match(/^(.*?)(?:\s*<([^>]+)>)?$/);
+    if (!match) {
+        return null
+    }
+    return { name: match[1], email: match[2] }
+}
+
+export const getLabel= (label: string[]) => {
+    const filteredData = label.filter(item => item.startsWith("Label_"));
+    
+    return filteredData
+}
+
+export const formatTimeAgo = (dateString: string) => {
+  if (!dateString) return '';
+
+  const emailDate = new Date(dateString);
+  const now = new Date();
+  
+  const secondsPast = Math.floor((now.getTime() - emailDate.getTime()) / 1000);
+
+  if (secondsPast < 0) return 'Just now';
+
+  if (secondsPast < 60) {
+    return 'Just now';
+  }
+  
+  const minutes = Math.floor(secondsPast / 60);
+  if (minutes < 60) {
+    return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+  }
+  
+  const days = Math.floor(hours / 24);
+  if (days < 7) {
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
+  
+  return emailDate.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric' 
+  });
+};

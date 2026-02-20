@@ -1,18 +1,18 @@
 import api from './api'
 
-import { 
-    MessageBatchModifyLabelRequest, MessageModifyLabelRequest 
+import {
+    MessageBatchModifyLabelRequest, MessageModifyLabelRequest
 } from '../interface/request'
-import { 
-    EmailDetailResponse, EmailFetchResponse ,
+import {
+    EmailDetailResponse, EmailFetchResponse,
     CategoryListResponse
 
 } from '../interface/response'
-import { 
+import {
     Attachment
 
 } from '../interface/email'
-import { 
+import {
     Category,
 } from '../interface/category'
 
@@ -146,7 +146,7 @@ export default {
 
                 body: body
             }
-            const response = await api.post<CategoryListResponse>('/email/message/batch-modify', payload)
+            const response = await api.post<CategoryListResponse>('/email/message/batch_modify', payload)
             return response.data
         } catch (error) {
             throw error
@@ -174,7 +174,7 @@ export default {
 
                 ids: ids
             }
-            const response = await api.post<CategoryListResponse>('/email/message/batch-delete', payload)
+            const response = await api.post<CategoryListResponse>('/email/message/batch_delete', payload)
             return response.data
         } catch (error) {
             throw error

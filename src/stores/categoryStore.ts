@@ -38,7 +38,6 @@ export const useLabelStore = defineStore('labels', () => {
 
                 let newCategories: Category[] = []
                 if (missingCategories.length > 0) {
-                    console.log(`Syncing missing labels: ${missingCategories.join(', ')}`)
                     try {
                         const syncResponse = await emailService.syncLabels(missingCategories)
                         if (syncResponse && syncResponse.categories) {
@@ -72,12 +71,32 @@ export const useLabelStore = defineStore('labels', () => {
         return rawLabels.value.find((label: Category) => label.id === id)
     }
 
+    const getLabelByIds = (id: string[]) => {
+        return id.map((item: string) => getLabelById(item))
+    }
+
+    const getLabelNameById = (id: string) => {
+        return rawLabels.value.find((label: Category) => label.id === id)?.name
+    }
+
+    const getLabelNameByName = (name: string) => {
+        return rawLabels.value.find((label: Category) => label.name === name)?.name
+    }
+
+    const getLabelNameByIds = (label: string[]) => {
+        return label.map((item: string) => getLabelNameById(item))
+    }
+
     return {
         categoryLabels,
         rawLabels,
         isReady,
         initialize,
         getLabelIdByName,
-        getLabelById
+        getLabelById,
+        getLabelByIds,
+        getLabelNameById,
+        getLabelNameByName,
+        getLabelNameByIds
     }
 })

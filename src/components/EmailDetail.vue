@@ -13,14 +13,12 @@ import {
 import {
   Reply, Forward, Archive, Trash2,
   Star, Clock, Tag, Paperclip,
-  File, Download, FileCode, FileText,
-  Loader
+  File, Download, FileCode, FileText
 } from 'lucide-vue-next'
 
 
 import EmailShadow from './EmailShadow.vue'
 
-import difyService from '../services/dify'
 import { EmailDetailResponse } from '../interface/response';
 
 const props = defineProps<{
@@ -29,25 +27,7 @@ const props = defineProps<{
   darkMode: boolean
 }>()
 
-
-
 const showHtml = ref(true)
-const isSummarizing = ref(false)
-
-const sendToDify = async () => {
-  if (!props.email || isSummarizing.value) return
-
-  isSummarizing.value = true
-
-  const req = {
-    msg_id: props.email.msg_id,
-    plain_text: props.email.plain_text || '',
-    email_tags: props.email.tag
-  }
-  difyService.testSummary(req)
-
-  isSummarizing.value = false
-}
 
 const hasHtml = computed(() => {
   return !!props.email?.html && props.email.html.trim().length > 0
@@ -96,15 +76,6 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
           : 'text-gray-600 hover:bg-white shadow-sm'">
           <Star :size="18" />
-        </button>
-        <button @click="sendToDify" :disabled="isSummarizing"
-          class="p-2 rounded-md transition-all flex items-center justify-center" :class="[
-            darkMode ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600' : 'text-gray-600 hover:bg-white shadow-sm',
-            isSummarizing ? 'opacity-70 cursor-not-allowed' : ''
-          ]" title="Summarize with AI">
-          <Loader v-if="isSummarizing" :size="18" class="animate-spin" />
-
-          <Clock v-else :size="18" />
         </button>
 
       </div>
