@@ -77,10 +77,7 @@ export default {
     },
     async getLabelById(id: string) {
         try {
-            const payload = {
-                id: id
-            }
-            const response = await api.post<Category>('/email/label/get', payload)
+            const response = await api.get<Category>(`/email/label/${id}`)
             return response.data
         } catch (error) {
             throw error

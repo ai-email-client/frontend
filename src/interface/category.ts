@@ -1,13 +1,14 @@
 import { LucideIcon } from "lucide-vue-next";
 
 export enum CategoryEnum {
-  APPOINTMENT = "Appointment",
+  ANNOUNCEMENT = "Announcement",
   MEETING = "Meeting",
+  NOTIFICATION = "Notification",
   INVITATION = "Invitation",
   INVOICE = "Invoice",
+  APPOINTMENT = "Appointment",
   MARKETING = "Marketing",
-  NOTIFICATION = "Notification",
-  ANNOUNCEMENT = "Announcement",
+  OTHER = "Other"
 }
 
 export enum MessageListVisibility {
