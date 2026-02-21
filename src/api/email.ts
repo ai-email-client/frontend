@@ -42,17 +42,14 @@ export default {
         }
     },
 
-    async getEmailById(id: string) {
+    async getMessageByID(id: string) {
         try {
-            const payload = {
-                msg_id: id
-            }
-            const response = await api.post<EmailDetailResponse>('/email/message/get', payload)
+            const response = await api.get<EmailDetailResponse>(`/email/message/${id}`)
 
             return response.data
 
         } catch (error: any) {
-            console.error("Error get email by id:", error.response.data)
+            console.error("Error get message by id:", error.response.data)
         }
     },
 
@@ -154,13 +151,7 @@ export default {
     },
     async messageDelete(id: string) {
         try {
-
-
-            const payload = {
-
-                id: id
-            }
-            const response = await api.post<CategoryListResponse>('/email/message/delete', payload)
+            const response = await api.delete<CategoryListResponse>(`/email/message/${id}`)
             return response.data
         } catch (error) {
             throw error
@@ -179,5 +170,23 @@ export default {
         } catch (error) {
             throw error
         }
-    }
+    },
+    async messageTrash(id: string) {
+        try {
+            const response = await api.put(`/email/message/trash/${id}`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async messageUntrash(id: string) {
+        try {
+            const response = await api.put(`/email/message/untrash/${id}`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+
+
 }

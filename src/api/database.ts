@@ -11,6 +11,15 @@ export default {
             return {} as EmailAnalysisResponse
         }
     },
+    async summary_exists(msg_id: string): Promise<boolean> {
+        try {
+            const response = await api.get('/database/summary_exists/' + msg_id)
+            return response.data
+        } catch (error) {
+            console.error('Failed to check database summary:', error)
+            return false
+        }
+    },
     async get_user_pin(email: string): Promise<any> {
         try {
             const response = await api.get('/database/email/' + email)

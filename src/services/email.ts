@@ -38,17 +38,17 @@ const emailService = {
             page_token: data.page_token,
         }
     },
-    getEmailById: async (
+    getMessageByID: async (
         msgId: string
     ): Promise<EmailDetailResponse> => {
         if (!msgId) {
             throw new Error('Message ID is required')
         }
 
-        const data = await emailAPI.getEmailById(msgId)
+        const data = await emailAPI.getMessageByID(msgId)
 
         if (!data) {
-            throw new Error('Email not found')
+            throw new Error('Message not found')
         }
 
         return data

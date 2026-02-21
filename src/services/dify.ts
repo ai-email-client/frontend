@@ -16,12 +16,6 @@ const difyService = {
     ): Promise<DifySummary> {
         const response = await difyAPI.getSummary(req)
         return response
-    },
-    async testSummary(
-        req: DifySummaryRequest
-    ): Promise<any> {
-        const response = await difyAPI.testSummary(req)
-        return response
     }
 }
 

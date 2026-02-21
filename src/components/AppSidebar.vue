@@ -9,7 +9,8 @@ import {
   ChevronDown,
   Circle,
   Folder,
-  AlertOctagon
+  AlertOctagon,
+  Sparkles
 } from 'lucide-vue-next'
 
 import { ref } from 'vue'
@@ -40,6 +41,12 @@ const handleLogout = () => {
 }
 
 const menuItems = ref<CategoryMenuItem[]>([
+  {
+    icon: Sparkles,
+    label: 'Overview',
+    to: '/overview',
+    badge: 0
+  },
   {
     icon: Inbox,
     label: 'Inbox',

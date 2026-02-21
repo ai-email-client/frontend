@@ -17,6 +17,8 @@ import emailService from '../services/email'
 import difyService from '../services/dify'
 import userService from '../services/user'
 import { DifySummaryRequest } from '../interface/request'
+import { DifySummary } from '../interface/dify'
+import databaseService from '../services/database'
 
 const props = defineProps({
   user: {
@@ -37,6 +39,7 @@ const limit = 5
 const emails = ref<EmailShortResponse[]>([])
 const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
+const summary = ref<DifySummary | null>(null)
 
 const nextPageToken = ref<string | null>(null)
 
@@ -63,7 +66,10 @@ const fetchEmails = async (
 
     loading.value = false
     for (const email of newEmails.messages) {
-      const emailDetail = await emailService.getEmailById(email.msg_id)
+      if (await databaseService.get_summary(email.msg_id)) {
+        return
+      }
+      const emailDetail = await emailService.getMessageByID(email.msg_id)
       await triggerSummaryInBackground(emailDetail)
     }
   } catch (error) {
@@ -85,8 +91,18 @@ const triggerSummaryInBackground = (email: EmailDetailResponse) => {
 const getEmailById = async (msgId: string) => {
   if (!msgId) return
   isLoadingEmail.value = true
-  const response = await emailService.getEmailById(msgId)
+
+  selectedEmail.value = null
+  summary.value = null
+
+  const response = await emailService.getMessageByID(msgId)
   selectedEmail.value = response
+
+  const summary_exists = await databaseService.get_summary(msgId)
+  if (summary_exists) {
+    summary.value = summary_exists
+  }
+
   isLoadingEmail.value = false
 }
 
@@ -158,7 +174,12 @@ onMounted(() => {
       <div
         class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"
         :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
-        <EmailDetail :email="selectedEmail" :loading="isLoadingEmail" :darkMode="darkMode" />
+        <EmailDetail 
+          :email="selectedEmail"
+          :summary="summary"
+          :loading="isLoadingEmail" 
+          :darkMode="darkMode" 
+        />
       </div>
     </div>
   </div>

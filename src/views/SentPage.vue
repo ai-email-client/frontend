@@ -51,7 +51,7 @@ const getEmailById = async (msgId: string) => {
     return
   }
   isLoadingEmail.value = true
-  const response = await emailService.getEmailById(msgId)
+  const response = await emailService.getMessageByID(msgId)
   selectedEmail.value = response
 
   isLoadingEmail.value = false

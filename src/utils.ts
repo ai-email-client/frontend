@@ -78,3 +78,19 @@ export const formatTimeAgo = (dateString: string) => {
     day: 'numeric' 
   });
 };
+
+export const formatDateTime = (dateString: string) => {
+  if (!dateString) return '';
+
+  const emailDate = new Date(dateString);
+
+  return emailDate.toLocaleString('en-GB', {
+    weekday: 'short',   
+    day: 'numeric',    
+    month: 'short',     
+    year: 'numeric',   
+    hour: '2-digit',   
+    minute: '2-digit', 
+    hour12: true       
+  });
+};

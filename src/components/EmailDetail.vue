@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import {
   sanitizeHtml,
-  formatSize
+  formatSize,
+  senderFormat,
+  getLabel,
+  formatDateTime
 } from '../utils'
 
 import {
@@ -11,23 +14,28 @@ import {
 } from 'vue';
 
 import {
-  Reply, Forward, Archive, Trash2,
-  Star, Clock, Tag, Paperclip,
+  Reply, Forward, Trash2,
+  Clock, Tag, Paperclip,
   File, Download, FileCode, FileText
 } from 'lucide-vue-next'
 
-
 import EmailShadow from './EmailShadow.vue'
+import { useLabelStore } from '../stores/categoryStore'
 
-import { EmailDetailResponse } from '../interface/response';
+import { EmailDetailResponse } from '../interface/response'
+import Summary from './Summary.vue';
+import { DifySummary } from '../interface/dify';
 
 const props = defineProps<{
   email: EmailDetailResponse | null,
+  summary: DifySummary | null,
   loading: boolean,
   darkMode: boolean
 }>()
 
 const showHtml = ref(true)
+
+const labelStore = useLabelStore()
 
 const hasHtml = computed(() => {
   return !!props.email?.html && props.email.html.trim().length > 0
@@ -57,28 +65,42 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
 </script>
 
 <template>
-  <div class="h-16 border-b flex items-center justify-between px-6 shrink-0"
-    :class="darkMode ? 'border-gray-800 bg-gray-800' : 'border-gray-200 bg-gray-50'">
-    <div class="flex items-center gap-4 bg">
-      <div class="flex p-1 rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
+  <div class="h-16 border-b flex items-center justify-between px-6 shrink-0 w-full"
+    :class="darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'">
+    <div class="flex-1 min-w-0 pr-4">
+      <h1 class="text-lg sm:text-xl font-bold truncate" :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
+        {{ email?.subject || '' }}
+      </h1>
+    </div>
 
-        <button @click="$emit('archiveEmail')" class="p-2 rounded-md transition-all" :class="darkMode
-          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
-          : 'text-gray-600 hover:bg-white shadow-sm'">
-          <Archive :size="18" />
-        </button>
-        <button @click="$emit('trashEmail')" class="p-2 rounded-md transition-all" :class="darkMode
-          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
-          : 'text-gray-600 hover:bg-white shadow-sm'">
+    <div class="flex items-center gap-1 rounded-lg border transition-colors" 
+        :class="darkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-200/50 border-gray-200'">
+        <button @click="$emit('trashEmail')" class="p-2 rounded-md transition-all group" 
+          :class="darkMode
+            ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700 hover:shadow-sm'
+            : 'text-gray-500 hover:text-red-500 hover:bg-white hover:shadow-sm'">
           <Trash2 :size="18" />
         </button>
-        <button class="p-2 rounded-md transition-all" :class="darkMode
-          ? 'bg-gray-700 text-gray-200 shadow-md hover:bg-gray-600'
-          : 'text-gray-600 hover:bg-white shadow-sm'">
-          <Star :size="18" />
-        </button>
-
-      </div>
+        <div class="p-1 rounded-lg flex items-center gap-1" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
+          <button @click="showHtml = true" :disabled="!hasHtml"
+            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
+              showHtml && hasHtml
+                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
+              !hasHtml ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
+            ]" :title="!hasHtml ? 'No HTML content' : 'View Original HTML'">
+            <FileCode :size="14" /> HTML
+          </button>
+          <button @click="showHtml = false" :disabled="!hasText"
+            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
+              !showHtml && hasText
+                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
+              !hasText ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
+            ]" :title="!hasText ? 'No Plain Text content' : 'View Plain Text'">
+            <FileText :size="14" /> Text
+          </button>
+        </div>
     </div>
   </div>
 
@@ -89,112 +111,55 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
 
   <div v-else-if="email" class="flex-1 overflow-y-auto p-5 custom-scrollbar"
     :class="darkMode ? 'border-gray-800 bg-gray-400' : 'border-gray-200 bg-gray-50'">
-    <div class="">
-
+      <Summary :data="summary" :darkMode="darkMode" :loading="loading" />
       <div class="flex justify-between items-start mb-8">
-        <div class="mb-8">
-          <div class="mb-6">
-            <h1 class="text-3xl font-bold mb-2 break-words leading-tight tracking-tight"
-              :class="darkMode ? 'text-white' : 'text-gray-900'">
-              {{ email.subject || '(No Subject)' }}
-
-              <span class="ml-2 px-2 py-0.5 rounded-md text-[10px] font-normal font-mono select-all cursor-text"
-                :class="darkMode ? 'text-white' : 'text-gray-900'">
-                {{ email.msg_id }}
-              </span>
-            </h1>
-          </div>
-
-          <div class="flex items-center gap-4 p-4 rounded-xl border transition-colors" :class="darkMode
-            ? 'bg-gray-800/50 border-gray-700/50'
-            : 'bg-gray-50/80 border-gray-100'">
-
-            <div
-              class="w-14 h-14 shrink-0 rounded-full bg-white text-gray-900 flex items-center justify-center font-bold text-xl shadow-lg ring-4"
+        <div class="flex items-center justify-between gap-4 p-4 rounded-xl border transition-colors w-full" 
+          :class="darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50/80 border-gray-100'">
+          <div class="w-14 h-14 shrink-0 rounded-full bg-white text-gray-900 flex items-center justify-center font-bold text-xl shadow-lg ring-4"
               :class="darkMode ? 'ring-gray-800' : 'ring-white'">
-              {{ email.sender ? email.sender.charAt(0).toUpperCase() : '?' }}
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-0.5">
-                <span class="font-bold text-lg truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
-                  {{ email.sender }}
-                </span>
-              </div>
-
-              <div class="flex items-center text-sm" :class="darkMode ? 'text-gray-200' : 'text-gray-500'">
-                <span class="flex items-center gap-1.5">
-                  to me
-                </span>
-              </div>
-            </div>
-
+              {{ senderFormat(email?.sender)?.name ? senderFormat(email?.sender)?.name.charAt(0).toUpperCase() : '?' }}
           </div>
-        </div>
-
-        <div class="text-right text-sm flex flex-col items-end gap-2 shrink-0">
-          <div class="flex items-center gap-2 px-3 py-1 rounded-full"
-            :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-500'">
-            <Clock :size="14" />
-            {{ email.time }}
-          </div>
-
-          <div v-if="email.tag && email.tag.length" class="flex flex-wrap gap-1 justify-end max-w-[200px]">
-            <div v-if="typeof email.tag === 'string'" class="flex items-center gap-1">
-              <Tag :size="14" /> {{ email.tag }}
+          <div class="flex-1 min-w-0 pr-4">
+            <div class="flex flex-wrap items-center gap-2 mb-0.5">
+              <span class="font-bold text-lg truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                {{ senderFormat(email?.sender)?.email }}
+              </span>
+              <span 
+                v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.tag))" 
+                :key="index"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-black/5 dark:border-white/10 shrink-0"
+                :style="{ 
+                  backgroundColor: label?.color?.backgroundColor, 
+                  color: label?.color?.textColor 
+                }"
+                >
+                  <Tag class="w-3 h-3 opacity-70" />
+                  <span class="truncate max-w-[80px]">{{ label?.name }}</span>
+                </span>
             </div>
-            <div v-else v-for="(t, i) in email.tag" :key="i"
-              class="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100"
-              :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-500'">
-              <Tag :size="12" /> {{ t }}
+          </div>
+          <div class="text-right text-sm flex flex-col items-end gap-2 shrink-0 ml-auto">
+            <div class="flex items-center gap-2 px-3 py-1 rounded-full whitespace-nowrap"
+                :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-500'">
+                <Clock :size="14" />
+                {{ formatDateTime(email.time) }}
             </div>
           </div>
         </div>
       </div>
-
-      <div class="flex justify-end mb-4 ">
-        <div class="p-1 rounded-lg flex items-center gap-1" :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
-
-          <button @click="showHtml = true" :disabled="!hasHtml"
-            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
-              showHtml && hasHtml
-                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-
-              !hasHtml ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
-            ]" :title="!hasHtml ? 'No HTML content' : 'View Original HTML'">
-            <FileCode :size="14" /> HTML
-          </button>
-
-          <button @click="showHtml = false" :disabled="!hasText"
-            class="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all" :class="[
-              !showHtml && hasText
-                ? (darkMode ? 'bg-gray-700 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-
-              !hasText ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : ''
-            ]" :title="!hasText ? 'No Plain Text content' : 'View Plain Text'">
-            <FileText :size="14" /> Text
-          </button>
-
-        </div>
-      </div>
-
+      <!-- Content -->
       <div class="prose max-w-none break-words" :class="darkMode ? 'prose-invert' : ''">
-
         <div v-if="showHtml">
           <div class="bg-white">
             <EmailShadow :content="sanitizeHtml(props.email?.html)" />
           </div>
         </div>
-
         <div v-else>
           <div class="whitespace-pre-wrap font-mono text-sm leading-relaxed rounded-lg p-4"
             :class="darkMode ? 'bg-gray-800 text-gray-100' : 'bg-gray-200 text-gray-900'">
             {{ email.plain_text }}
           </div>
         </div>
-
       </div>
 
       <div v-if="email.attachments && email.attachments.length > 0" class="mb-12 pt-6 border-t mt-8"
@@ -239,8 +204,6 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           </button>
         </div>
       </div>
-
-    </div>
   </div>
 
   <div v-else class="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
