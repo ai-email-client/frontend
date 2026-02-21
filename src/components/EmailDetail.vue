@@ -4,7 +4,8 @@ import {
   formatSize,
   senderFormat,
   getLabel,
-  formatDateTime
+  formatDateTime,
+  getFirstCharacter
 } from '../utils'
 
 import {
@@ -156,7 +157,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                 background: `hsl(${avatarHue}, 60%, ${darkMode ? '38%' : '48%'})`
               }"
             >
-              {{ senderFormat(email?.sender)?.name?.charAt(0).toUpperCase() ?? '?' }}
+              {{ getFirstCharacter(senderFormat(email?.sender)?.name ?? '') }}
             </div>
 
             <div class="min-w-0">

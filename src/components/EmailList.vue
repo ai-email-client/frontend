@@ -12,7 +12,7 @@ import {
   EmailShortResponse 
 } from '../interface/response';
 import { useLabelStore } from '../stores/categoryStore';
-import { formatTimeAgo, getLabel, senderFormat } from '../utils';
+import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat } from '../utils';
 
 const labelStore = useLabelStore();
 
@@ -54,7 +54,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           v-for="email in emails"
           :key="email.msg_id"
           @click="$emit('select', email.msg_id)"
-          :title="`${senderFormat(email.sender)?.name} — ${email.subject}`"
+          :title="`${getFirstCharacter(senderFormat(email.sender)?.name ?? '')} — ${email.subject}`"
           class="relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-150 shrink-0 shadow-sm"
           :class="[
             selectedEmail?.msg_id === email.msg_id
@@ -64,7 +64,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105')
           ]"
         >
-          {{ (senderFormat(email.sender)?.name ?? '?').charAt(0).toUpperCase() }}
+          {{ getFirstCharacter(senderFormat(email.sender)?.name ?? '') }}
 
           <span
             v-if="email.tag.includes('UNREAD')"
@@ -97,7 +97,6 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           </button>
         </div>
 
-        <!-- Pagination -->
         <div class="flex items-center justify-between mb-4">
           <button
             @click="$emit('prevPage')"
@@ -120,7 +119,6 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           </button>
         </div>
 
-        <!-- Search -->
         <div class="relative">
           <Search
             class="absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
@@ -138,7 +136,6 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
         </div>
       </div>
 
-      <!-- Email rows -->
       <div class="flex-1 overflow-y-auto custom-scrollbar">
         <div
           v-for="email in emails"
@@ -152,7 +149,8 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
               : (darkMode ? 'border-l-transparent hover:bg-gray-800' : 'border-l-transparent hover:bg-gray-50')
           ]"
         >
-          <div class="flex items-start justify-between gap-4">
+          <div 
+            class="flex items-start justify-between gap-4">
             <div
               class="flex-1 min-w-0 transition-opacity duration-200"
               :class="!email.tag.includes('UNREAD') ? 'opacity-50' : 'opacity-100'"
@@ -173,13 +171,14 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
                   </h3>
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
-                      v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.tag))"
-                      :key="index"
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-black/5 dark:border-white/10"
-                      :style="{ backgroundColor: label?.color?.backgroundColor, color: label?.color?.textColor }"
+                      :style="{ 
+                        backgroundColor: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.backgroundColor, 
+                        color: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.textColor 
+                      }"
                     >
                       <Tag class="w-3 h-3 opacity-70" />
-                      <span class="truncate max-w-[80px]">{{ label?.name }}</span>
+                      <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.tag)[0])?.name }}</span>
                     </span>
                   </div>
                 </div>

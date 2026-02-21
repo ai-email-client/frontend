@@ -31,16 +31,22 @@ export const formatLabel = (str: string) => {
 }
 
 export const senderFormat = (sender: string) => {
+    if (!sender) return null;
+
     const match = sender.match(/^(.*?)(?:\s*<([^>]+)>)?$/);
-    if (!match) {
-        return null
-    }
-    return { name: match[1], email: match[2] }
-}
+    if (!match) return null;
+
+    const extractedName = match[1].trim();
+    const extractedEmail = match[2] ? match[2].trim() : extractedName;
+
+    return { 
+        name: extractedName || extractedEmail, 
+        email: extractedEmail 
+    };
+};
 
 export const getLabel= (label: string[]) => {
     const filteredData = label.filter(item => item.startsWith("Label_"));
-    
     return filteredData
 }
 
@@ -94,3 +100,11 @@ export const formatDateTime = (dateString: string) => {
     hour12: true       
   });
 };
+
+export const getFirstCharacter = (str: string) => {
+  if (!str) return '';
+
+  const match = str.match(/[\p{L}\p{N}]/u);
+
+  return match ? match[0].toUpperCase() : str.charAt(0).toUpperCase();
+}

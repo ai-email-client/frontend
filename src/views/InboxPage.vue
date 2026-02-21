@@ -31,7 +31,6 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  // ▼ Received from App.vue via v-model:listWidth
   listWidth: {
     type: Number,
     default: 350
@@ -50,9 +49,8 @@ const summary = ref<DifySummary | null>(null)
 // ── Layout Control ──
 const MIN_PX  = 80
 const MAX_PX  = 800
-const SNAP_PX = 140   // snap-to-collapse threshold
+const SNAP_PX = 140
 
-// Read/write listWidth through emit so App.vue stays in sync
 const currentWidth = computed({
   get: () => props.listWidth,
   set: (val) => emit('update:listWidth', val)
@@ -85,9 +83,10 @@ const fetchEmails = async (
     loading.value = false
     for (const email of newEmails.messages) {
       const summary_exists = await databaseService.get_summary(email.msg_id)
-      if (summary_exists !== null) return
-      const emailDetail = await emailService.getMessageByID(email.msg_id)
-      await triggerSummaryInBackground(emailDetail)
+      if (summary_exists === null) {
+        const emailDetail = await emailService.getMessageByID(email.msg_id)
+        await triggerSummaryInBackground(emailDetail)
+      }
     }
   } catch (error) {
     console.error('Failed to fetch emails', error)
