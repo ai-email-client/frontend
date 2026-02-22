@@ -28,5 +28,14 @@ export default {
             console.error('Failed to get user pin:', error)
         }
     },
+    async check_summary(msg_id: string): Promise<boolean> {
+        try {
+            const response = await api.get('/database/check_summary/' + msg_id)
+            return response.data
+        } catch (error) {
+            console.error('Failed to check database summary:', error)
+            return false
+        }
+    }
 
 }

@@ -14,6 +14,10 @@ const databaseService = {
         const response = await databaseAPI.get_user_pin(email)
         return response
     },
+    async check_summary(msg_id: string): Promise<boolean> {
+        const response = await databaseAPI.check_summary(msg_id)
+        return response
+    }
 }
 
 export default databaseService

@@ -33,7 +33,7 @@ const props = defineProps({
   },
   listWidth: {
     type: Number,
-    default: 350
+    default: 450
   }
 })
 
@@ -82,7 +82,7 @@ const fetchEmails = async (
     nextPageToken.value = newEmails.page_token
     loading.value = false
     for (const email of newEmails.messages) {
-      const summary_exists = await databaseService.get_summary(email.msg_id)
+      const summary_exists = await databaseService.check_summary(email.msg_id)
       if (summary_exists === null) {
         const emailDetail = await emailService.getMessageByID(email.msg_id)
         await triggerSummaryInBackground(emailDetail)
@@ -154,7 +154,7 @@ const handleDrag = (clientX: number) => {
 }
 
 const handleCollapse = () => { currentWidth.value = MIN_PX }
-const handleExpand   = () => { currentWidth.value = 350 }
+const handleExpand   = () => { currentWidth.value = 450 }
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {

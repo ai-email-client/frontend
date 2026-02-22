@@ -31,7 +31,7 @@ const user = ref<UserProfile | null>(null)
 const isAppLoading = ref(true)
 
 const MIN_PX = 80
-const listWidth = ref(350)
+const listWidth = ref(450)
 const collapsed = computed(() => listWidth.value <= MIN_PX + 4)
 
 const showLayout = computed(() => {
@@ -41,9 +41,9 @@ const showLayout = computed(() => {
 
 const presetWidths = [
   { label: '⟵',  title: 'Collapse',    value: MIN_PX },
-  { label: 'S',   title: 'Small (250)', value: 350    },
-  { label: 'M',   title: 'Medium (350)',value: 450    },
-  { label: 'L',   title: 'Large (450)', value: 550    },
+  { label: 'S',   title: 'Small', value: 350    },
+  { label: 'M',   title: 'Medium',value: 450    },
+  { label: 'L',   title: 'Large', value: 550    },
 ]
 
 const applyPreset = (preset: { value: number }) => {

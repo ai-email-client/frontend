@@ -29,13 +29,11 @@ defineProps<{
 
 defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
 </script>
-
 <template>
   <div
     class="w-full flex flex-col border-r h-full transition-colors duration-300 overflow-hidden"
     :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'"
   >
-
     <template v-if="collapsed">
       <div class="flex flex-col items-center gap-2 py-3 flex-1 overflow-y-auto custom-scrollbar">
         <button
@@ -50,6 +48,17 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
 
         <div class="w-6 border-t shrink-0" :class="darkMode ? 'border-gray-700' : 'border-gray-200'" />
 
+        <!-- Collapsed empty state -->
+        <div
+          v-if="!loading && emails.length === 0"
+          class="flex flex-col items-center gap-1.5 mt-4"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-300'"
+        >
+          <Mail :size="20" />
+          <span class="text-[9px] font-medium text-center leading-tight">No<br>mail</span>
+        </div>
+
+        <!-- Circle avatars -->
         <button
           v-for="email in emails"
           :key="email.msg_id"
@@ -65,14 +74,12 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           ]"
         >
           {{ getFirstCharacter(senderFormat(email.sender)?.name ?? '') }}
-
           <span
             v-if="email.tag.includes('UNREAD')"
             class="absolute top-0 right-0 w-2.5 h-2.5 bg-blue-500 rounded-full border-2"
             :class="darkMode ? 'border-gray-900' : 'border-white'"
           />
         </button>
-
       </div>
     </template>
 
@@ -135,8 +142,34 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           />
         </div>
       </div>
-
       <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <div
+          v-if="!loading && emails.length === 0"
+          class="flex flex-col items-center justify-center h-full gap-3 select-none"
+        >
+          <div
+            class="w-14 h-14 rounded-2xl flex items-center justify-center"
+            :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'"
+          >
+            <Mail :size="26" :class="darkMode ? 'text-gray-600' : 'text-gray-300'" />
+          </div>
+          <p class="text-sm font-semibold" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+            No messages found
+          </p>
+          <p class="text-xs" :class="darkMode ? 'text-gray-700' : 'text-gray-300'">
+            Try refreshing or selecting another folder
+          </p>
+          <button
+            @click="$emit('refresh')"
+            class="mt-1 text-xs px-3 py-1.5 rounded-lg border transition-colors"
+            :class="darkMode
+              ? 'border-gray-700 text-gray-500 hover:bg-gray-800 hover:text-gray-300'
+              : 'border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600'"
+          >
+            Refresh
+          </button>
+        </div>
+
         <div
           v-for="email in emails"
           :key="email.msg_id"
@@ -149,8 +182,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
               : (darkMode ? 'border-l-transparent hover:bg-gray-800' : 'border-l-transparent hover:bg-gray-50')
           ]"
         >
-          <div 
-            class="flex items-start justify-between gap-4">
+          <div class="flex items-start justify-between gap-4">
             <div
               class="flex-1 min-w-0 transition-opacity duration-200"
               :class="!email.tag.includes('UNREAD') ? 'opacity-50' : 'opacity-100'"
@@ -172,9 +204,9 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-black/5 dark:border-white/10"
-                      :style="{ 
-                        backgroundColor: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.backgroundColor, 
-                        color: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.textColor 
+                      :style="{
+                        backgroundColor: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.backgroundColor,
+                        color: labelStore.getLabelById(getLabel(email.tag)[0])?.color?.textColor
                       }"
                     >
                       <Tag class="w-3 h-3 opacity-70" />
@@ -212,6 +244,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
             </div>
           </div>
         </div>
+
       </div>
     </template>
 

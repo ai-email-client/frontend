@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
   ref,
-  onMounted
+  onMounted,
+  computed,
+  watch
 } from 'vue'
 import {
   useRoute
@@ -9,6 +11,7 @@ import {
 
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
+import Divider from '../components/Divider.vue'
 
 import {
   EmailShortResponse,
@@ -25,27 +28,49 @@ const labelStore = useLabelStore()
 
 const props = defineProps<{
   darkMode: boolean
+  listWidth: number
 }>()
 
-const loading = ref(false)
-const limit = 5
+const emit = defineEmits(['update:listWidth'])
 
-const emails = ref<EmailShortResponse[]>([])
+// ── State ──
+const containerRef = ref<HTMLElement | null>(null)
+const emailList = ref<EmailShortResponse[]>([])
 const selectedEmail = ref<EmailDetailResponse | null>(null)
 const isLoadingEmail = ref(false)
 const summary = ref<DifySummary | null>(null)
 
-const nextPageToken = ref<string | null>(null)
+// ── Layout Control ──
+const MIN_PX  = 80
+const MAX_PX  = 800
+const SNAP_PX = 140
 
-const stackToken = ref<(string | null)[]>([null])
-const currentPage = ref(0)
+const currentWidth = computed({
+  get: () => props.listWidth,
+  set: (val) => emit('update:listWidth', val)
+})
 
-const totalMessage = ref(1)
+const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
+const showViewer  = computed(() => selectedEmail.value !== null)
+
+const loading         = ref(false)
+const limit           = 5
+const nextPageToken   = ref<string | null>(null)
+const stackToken      = ref<(string | null)[]>([null])
+const currentPage     = ref(0)
+const totalMessage    = ref(1)
 
 const getCurrentLabel = () => {
   const currentCategoryName = route.params.category as string
+  return [labelStore.getLabelIdByName(currentCategoryName.toLowerCase()) || '']
+}
 
-  return [labelStore.getLabelIdByName(currentCategoryName.toLowerCase()) || 'INBOX']
+const resetPagination = () => {
+  emailList.value = []
+  currentPage.value   = 0
+  totalMessage.value  = 1
+  stackToken.value    = [null]
+  nextPageToken.value = null
 }
 
 const fetchEmails = async (
@@ -57,117 +82,127 @@ const fetchEmails = async (
 ) => {
   loading.value = true
   selectedEmail.value = null
-
+  getTotalMessage()
   try {
     const newEmails = await emailService.fetchEmails(labels, limit, pageToken, q, is_next)
-
-    emails.value = newEmails.messages
+    emailList.value = newEmails.messages
     nextPageToken.value = newEmails.page_token
-
     loading.value = false
   } catch (error) {
-    console.error("Failed to fetch emails", error)
+    console.error('Failed to fetch emails', error)
   }
 }
 
 const getEmailById = async (msgId: string) => {
   if (!msgId) return
   isLoadingEmail.value = true
-
   selectedEmail.value = null
   summary.value = null
-
   const response = await emailService.getMessageByID(msgId)
   selectedEmail.value = response
-
   const summary_exists = await databaseService.get_summary(msgId)
-  if (summary_exists) {
-    summary.value = summary_exists
-  }
-
+  if (summary_exists) summary.value = summary_exists
   isLoadingEmail.value = false
 }
 
 const nextPage = async () => {
-  if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) {
-    return
-  }
-
+  if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
-  emails.value = []
-
+  emailList.value = []
   const targetPage = currentPage.value
   let tokenToUse: string | null = null
-
   if (targetPage < stackToken.value.length) {
     tokenToUse = stackToken.value[targetPage]
-  }
-  else {
+  } else {
     tokenToUse = nextPageToken.value
   }
-
   await fetchEmails(getCurrentLabel(), limit, tokenToUse, null, true)
-
-  if (targetPage >= stackToken.value.length) {
-    stackToken.value.push(tokenToUse)
-  }
-
+  if (targetPage >= stackToken.value.length) stackToken.value.push(tokenToUse)
 }
 
 const prevPage = async () => {
   if (currentPage.value === 0) return
-
   currentPage.value--
-  emails.value = []
-
-  const targetPage = currentPage.value
-  const tokenToUse = stackToken.value[targetPage]
-
+  emailList.value = []
+  const tokenToUse = stackToken.value[currentPage.value]
   await fetchEmails(getCurrentLabel(), limit, tokenToUse, null, true)
-
 }
 
 const getTotalMessage = async () => {
-  loading.value = true
   const response = await emailService.getLabelById(getCurrentLabel()[0])
-  if (response.messagesTotal) {
-    console.log(response.messagesTotal)
-    totalMessage.value = response.messagesTotal
-
-  }
-  loading.value = false
+  if (response.messagesTotal) totalMessage.value = response.messagesTotal
 }
+
+const handleDrag = (clientX: number) => {
+  if (!containerRef.value) return
+  const { left, width } = containerRef.value.getBoundingClientRect()
+  const raw = clientX - left
+  const newWidth = raw < SNAP_PX ? MIN_PX : Math.min(Math.max(raw, MIN_PX), Math.min(MAX_PX, width * 0.75))
+  currentWidth.value = newWidth
+}
+
+const handleCollapse = () => { currentWidth.value = MIN_PX }
+const handleExpand   = () => { currentWidth.value = 350 }
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
-    fetchEmails(getCurrentLabel(), limit, null, null)
-    getTotalMessage()
-    if (emails.value.length > 0) {
-      getEmailById(emails.value[0].msg_id)
-    }
+    fetchEmails(getCurrentLabel(), limit, stackToken.value[0], null)
   }
 })
 
+watch(() => route.params.category, () => {
+  resetPagination()
+  fetchEmails(getCurrentLabel(), limit, null, null)
+}, { immediate: true })
 
 </script>
-<template>
-  <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-    <div class="flex flex-1 overflow-hidden relative">
-      <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-        @select="(msgId: string) => getEmailById(msgId)"
-        @refresh="() => fetchEmails(getCurrentLabel(), limit, stackToken[currentPage], null)" @prevPage="prevPage"
-        @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
 
-      <div
-        class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"
-        :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
-        <EmailDetail 
-          :email="selectedEmail"
-          :summary="summary"
-          :loading="isLoadingEmail" 
-          :darkMode="darkMode" 
-        />
-      </div>
+<template>
+  <div
+    ref="containerRef"
+    class="flex-1 flex overflow-hidden"
+  >
+    <div
+      :style="{ width: `${currentWidth}px`, minWidth: `${MIN_PX}px`, flexShrink: 0 }"
+      class="flex-col overflow-hidden transition-none"
+      :class="showViewer ? 'hidden md:flex' : 'flex'"
+    >
+      <EmailList
+        :emails="emailList"
+        :selected-email="selectedEmail"
+        :loading="loading"
+        :current-page="currentPage + 1"
+        :total-message="totalMessage"
+        :limit="limit"
+        :dark-mode="darkMode"
+        :collapsed="collapsed"
+        @select="(msgId: string) => getEmailById(msgId)"
+        @refresh="() => fetchEmails(getCurrentLabel(), limit, stackToken[currentPage], null)"
+        @prevPage="prevPage"
+        @nextPage="nextPage"
+      />
+    </div>
+
+    <div class="hidden md:block">
+      <Divider
+        :dark-mode="darkMode"
+        @drag="handleDrag"
+        @collapse="handleCollapse"
+        @expand="handleExpand"
+      />
+    </div>
+
+    <div
+      class="flex-col flex-1 min-w-0"
+      :class="showViewer ? 'flex' : 'hidden md:flex'"
+    >
+      <EmailDetail
+        :email="selectedEmail"
+        :summary="summary"
+        :loading="isLoadingEmail"
+        :dark-mode="darkMode"
+        @back="selectedEmail = null"
+      />
     </div>
   </div>
 </template>
