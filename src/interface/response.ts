@@ -1,11 +1,43 @@
 import { DifySummary } from './dify';
-import { Attachment, Sender } from './email';
+import { Attachment, Payload, Sender } from './email';
 import { Category } from './category';
 
 export interface AttachmentResponse {
   mimeType: string;
   size: number;
   attachmentId?: string | null;
+}
+
+export interface FetchMessagesResponse {
+  messages: MessagesResponse[]
+  nextPageToken: string
+  resultSizeEstimate: number
+}
+
+export interface MessagesResponse {
+  id: string;
+  threadId: string;
+}
+
+export interface MessageMinimalResponse {
+  id: string;
+  threadId: string;
+  labelIds: string[];
+  snippet: string;
+  sizeEstimate: number;
+  historyId: string;
+  internalDate: string;
+}
+
+export interface MessageMetaDataResponse{
+  id: string;
+  threadId: string;
+  labelIds: string[];
+  snippet: string;
+  sizeEstimate: number;
+  historyId: string;
+  internalDate: string;
+  payload: Payload
 }
 
 export interface EmailAnalysisResponse {

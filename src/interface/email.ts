@@ -1,3 +1,8 @@
+export interface Payload{
+  mimeType: string;
+  headers: Header[];
+}
+
 export interface Attachment {
   filename: string;
   mimeType: string;

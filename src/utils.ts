@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify'
+import { Header } from './interface/email'
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
     if ('target' in node) {
@@ -32,7 +33,6 @@ export const formatLabel = (str: string) => {
 
 export const senderFormat = (sender: string) => {
     if (!sender) return null;
-
     const match = sender.match(/^(.*?)(?:\s*<([^>]+)>)?$/);
     if (!match) return null;
 
@@ -107,4 +107,12 @@ export const getFirstCharacter = (str: string) => {
   const match = str.match(/[\p{L}\p{N}]/u);
 
   return match ? match[0].toUpperCase() : str.charAt(0).toUpperCase();
+}
+
+export const getHeaderValue = (headers: Header[], headerName: string) => {
+  return headers.find(header => header.name === headerName)?.value||''
+}
+
+export const parseInternalDate = () => {
+
 }

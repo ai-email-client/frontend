@@ -4,9 +4,7 @@ import {
     MessageBatchModifyLabelRequest, MessageModifyLabelRequest
 } from '../interface/request'
 import {
-    EmailDetailResponse, EmailFetchResponse,
     CategoryListResponse
-
 } from '../interface/response'
 import {
     Attachment
@@ -15,25 +13,21 @@ import {
 import {
     Category,
 } from '../interface/category'
-
-
+import { MessageParam, MessagesParam } from '../interface/param'
 
 export default {
-    async getEmails(
-        limit: number = 10,
-        labels: string[] = ["INBOX", "UNREAD"],
-        query: string | null = null,
-        pageToken: string | null = null
+    async fetch_emails(
+        param: MessagesParam
     ) {
         try {
-            const payload = {
-                limit: limit,
-                label: labels,
-                query: query,
-                page_token: pageToken
-            }
-
-            const response = await api.post<EmailFetchResponse>('/email/messages', payload)
+            const response = await api.get<any  >('/email/messages', 
+                {
+                    params: param,
+                    paramsSerializer: {
+                        indexes: null 
+                    }
+                }
+            )
             return response.data
 
         } catch (error) {
@@ -42,9 +36,17 @@ export default {
         }
     },
 
-    async getMessageByID(id: string) {
+    async get_message_by_id(
+        id: string,
+        param: MessageParam
+    ) {
         try {
-            const response = await api.get<EmailDetailResponse>(`/email/message/${id}`)
+            const response = await api.get<any>(`/email/message/${id}`,{
+                params: param,
+                paramsSerializer: {
+                    indexes: null 
+                }
+            })
 
             return response.data
 

@@ -10,42 +10,47 @@ import {
     CategoryListResponse,
     EmailDetailResponse,
     EmailFetchResponse,
+    FetchMessagesResponse,
+    MessageMinimalResponse,
+    MessageMetaDataResponse,
 } from '../interface/response'
 
 import emailAPI from '../api/email'
 import { MessageModifyLabelRequest } from '../interface/request'
+import { MessageParam } from '../interface/param'
 
 const emailService = {
     fetchEmails: async (
-        labels: string[],
-        limit: number,
-        currentToken: string | null,
+        labelIds: string[],
+        maxResults: number,
+        pageToken: string | null,
         query: string | null,
-        isLoadMore = false
-    ): Promise<EmailFetchResponse> => {
+        includeSpamTrash: boolean,
+    ): Promise<FetchMessagesResponse> => {
 
-        const pageToken = isLoadMore ? currentToken : null
-
-        const data = await emailAPI.getEmails(
-            limit,
-            labels,
-            query,
-            pageToken
+        const data = await emailAPI.fetch_emails(
+            {   maxResults: maxResults,
+                labelIds: labelIds,
+                pageToken: pageToken,
+                q: query,
+                includeSpamTrash: includeSpamTrash
+            }
         )
 
-        return {
-            messages: data.messages,
-            page_token: data.page_token,
-        }
+        return data
     },
     getMessageByID: async (
-        msgId: string
-    ): Promise<EmailDetailResponse> => {
+        msgId: string,
+        param: MessageParam
+    ): Promise<MessageMetaDataResponse> => {
         if (!msgId) {
             throw new Error('Message ID is required')
         }
 
-        const data = await emailAPI.getMessageByID(msgId)
+        const data = await emailAPI.get_message_by_id(
+            msgId,
+            param
+        )
 
         if (!data) {
             throw new Error('Message not found')
