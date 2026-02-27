@@ -36,6 +36,15 @@ export default {
             console.error('Failed to check database summary:', error)
             return false
         }
+    },
+    async get_source_email(msg_id: string): Promise<any> {
+        try {
+            const response = await api.get('/database/get_source_email/' + msg_id)
+            return response.data
+        } catch (error) {
+            console.error('Failed to get source email:', error)
+            return null
+        }
     }
 
 }

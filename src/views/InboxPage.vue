@@ -2,7 +2,9 @@
 import {
   ref,
   onMounted,
-  computed
+  computed,
+  onUnmounted,
+  watch
 } from 'vue'
 
 import EmailList from '../components/EmailList.vue'
@@ -67,6 +69,8 @@ const stackToken      = ref<(string | null)[]>([null])
 const currentPage     = ref(0)
 const totalMessage    = ref(1)
 
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
+
 const fetchEmails = async (
   labels: string[],
   limit: number,
@@ -83,13 +87,23 @@ const fetchEmails = async (
     loading.value = false
     for (const email of newEmails.messages) {
       const summary_exists = await databaseService.check_summary(email.msg_id)
-      if (summary_exists === null) {
+      console.log(summary_exists)
+      if (!summary_exists) {
         const emailDetail = await emailService.getMessageByID(email.msg_id)
         await triggerSummaryInBackground(emailDetail)
       }
     }
   } catch (error) {
     console.error('Failed to fetch emails', error)
+  }
+}
+
+const checkSummarySilently = async () => {
+  if (selectedEmail.value && !summary.value) {
+    const summary_exists = await databaseService.get_summary(selectedEmail.value.msg_id);
+    if (summary_exists) {
+      summary.value = summary_exists;
+    }
   }
 }
 
@@ -162,6 +176,23 @@ onMounted(() => {
   }
   getTotalMessage()
 })
+
+watch(emailList, (newList) => {
+  if (newList && newList.length > 0) {
+    databaseService.get_source_email(newList[0].msg_id)
+    if (!pollingInterval) {
+      pollingInterval = setInterval(checkSummarySilently, 5000);
+    }
+  } 
+  else if (newList && newList.length === 0 && pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+}, { deep: true, immediate: true });
+
+onUnmounted(() => {
+  if (pollingInterval) clearInterval(pollingInterval);
+});
 
 </script>
 

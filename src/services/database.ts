@@ -17,6 +17,10 @@ const databaseService = {
     async check_summary(msg_id: string): Promise<boolean> {
         const response = await databaseAPI.check_summary(msg_id)
         return response
+    },
+    async get_source_email(msg_id: string): Promise<any> {
+        const response = await databaseAPI.get_source_email(msg_id)
+        return response
     }
 }
 
