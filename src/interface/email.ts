@@ -48,6 +48,8 @@ export interface Message {
   historyId: string;
   internalDate: string;
   payload: MessagePart;
+  text_plain: string;
+  text_html: string;
   sizeEstimate: number;
   raw: string;
   classificationLabelValues: ClassificationLabelValue[];

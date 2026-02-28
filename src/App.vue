@@ -17,18 +17,18 @@ import {
   Sun
 } from 'lucide-vue-next'
 import AppSidebar from './components/AppSidebar.vue'
-import userService from './services/user'
 import { UserProfile } from './interface/user'
 import { useLabelStore } from './stores/categoryStore'
+import { useUiStore } from './stores/uiStore'
 
 const route = useRoute()
 const router = useRouter()
+const uiStore = useUiStore()
 const labelStore = useLabelStore()
 
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
 const user = ref<UserProfile | null>(null)
-const isAppLoading = ref(true)
 
 const MIN_PX = 80
 const listWidth = ref(450)
@@ -50,22 +50,12 @@ const applyPreset = (preset: { value: number }) => {
   listWidth.value = preset.value
 }
 
-const handleUser = async () => {
-  if (!user.value) {
-    try {
-      user.value = await userService.get_profile()
-    } catch {
-      handleLogout()
-    }
-  }
-}
-
 const handleAuthCheck = async () => {
   const publicPages = ['Login', 'Callback']
   if (!route.name) return
 
   if (publicPages.includes(route.name as string)) {
-    isAppLoading.value = false
+    uiStore.setLoading(false)
     return
   }
 
@@ -79,27 +69,35 @@ const handleAuthCheck = async () => {
     router.replace('/inbox')
   }
 
-  isAppLoading.value = false
 }
 
 const handleLogout = () => {
   localStorage.removeItem('jwt_token')
   user.value = null
   router.replace('/login')
-  isAppLoading.value = false
+  uiStore.setLoading(false)
 }
 
 onMounted(async () => {
+  const navEntries = window.performance.getEntriesByType("navigation")
+  
+  if (navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === "reload") {
+    await handleAuthCheck()
+    if (!labelStore.rawLabels.length) {
+      await labelStore.getLabels()
+    }
+    router.replace('/inbox') 
+  }
   await router.isReady()
   await handleAuthCheck()
-  await handleUser()
-  await labelStore.initialize()
+  uiStore.setLoading(false)
 })
 
 watch(
   () => route.name,
-  async (newName) => {
-    if (newName) await handleAuthCheck()
+  async () => {
+    await router.isReady()
+    await handleAuthCheck()
   }
 )
 </script>
@@ -109,20 +107,8 @@ watch(
     class="flex h-screen w-full transition-colors duration-300"
     :class="darkMode ? 'bg-gray-950 text-gray-200' : 'bg-gray-50 text-gray-900'"
   >
-    <div
-      v-if="isAppLoading"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-950"
-    >
-      <div class="flex flex-col items-center gap-2">
-        <Loader2 class="animate-spin text-blue-500" :size="48" />
-        <span class="text-sm text-gray-500">Loading Application...</span>
-      </div>
-    </div>
-
-    <template v-else>
       <AppSidebar
         v-if="showLayout"
-        :user="user"
         :collapsed="sidebarCollapsed"
         :dark-mode="darkMode"
         @toggleCollapse="sidebarCollapsed = !sidebarCollapsed"
@@ -179,6 +165,5 @@ watch(
           v-model:presetWidths="presetWidths"
         />
       </div>
-    </template>
   </div>
 </template>

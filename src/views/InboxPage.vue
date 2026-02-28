@@ -3,7 +3,6 @@ import {
   ref,
   onMounted,
   computed,
-  onUnmounted,
   watch
 } from 'vue'
 
@@ -19,6 +18,11 @@ import {
 import emailService from '../services/email'
 import difyService from '../services/dify'
 import userService from '../services/user'
+import databaseService from '../services/database'
+import { DifySummary } from '../interface/dify'
+import { DifySummaryRequest } from '../interface/request'
+import { Message } from '../interface/email'
+import { useUiStore } from '../stores/uiStore'
 // import { DifySummaryRequest } from '../interface/request'
 // import { DifySummary } from '../interface/dify'
 // import databaseService from '../services/database'
@@ -39,13 +43,14 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:listWidth'])
+const uiStore = useUiStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
 const emailList = ref<MessageMetaDataResponse[]>([])
-const selectedEmail = ref<MessageMetaDataResponse | null>(null)
+const selectedEmail = ref<Message | null>(null)
 // const isLoadingEmail = ref(false)
-// const summary = ref<DifySummary | null>(null)
+const summary = ref<DifySummary | null>(null)
 
 // ── Layout Control ──
 const MIN_PX  = 80
@@ -60,15 +65,12 @@ const currentWidth = computed({
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
 
-const loading         = ref(false)
 const labels          = ['INBOX']
-const limit           = 5
+const limit           = 20
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
 const currentPage     = ref(0)
 const totalMessage    = ref(1)
-
-let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 const fetchEmails = async (
   labelIds: string[],
@@ -77,10 +79,9 @@ const fetchEmails = async (
   query: string,
   includeSpamTrash: boolean
 ) => {
-  loading.value = true
-  selectedEmail.value = null
-  
   try {
+    uiStore.setLoading(true)
+    getTotalMessage()
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash
     )
@@ -88,30 +89,12 @@ const fetchEmails = async (
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-
-    if (!response.messages || response.messages.length === 0) {
-      emailList.value = []
-      nextPageToken.value = response.nextPageToken || ''
-      loading.value = false
-      return
-    }
-
-    const detailPromises = response.messages.map(message => 
-      emailService.getMessageByID(message.id, { 
-        format: 'metadata',
-        metadataHeaders: ['Date', 'From', 'Subject', 'To']
-      })
-    )
-
-    const emailDetails = await Promise.all(detailPromises)
-
-    emailList.value = emailDetails
-    
+    emailList.value = response.messages    
 
   } catch (error) {
     console.error('Failed to fetch emails', error)
   } finally {
-    loading.value = false
+    uiStore.setLoading(false)
   }
 }
 
@@ -142,26 +125,24 @@ const fetchEmails = async (
 //   }
 // }
 
-// const checkSummarySilently = async () => {
-//   if (selectedEmail.value && !summary.value) {
-//     const summary_exists = await databaseService.get_summary(selectedEmail.value.msg_id);
-//     if (summary_exists) {
-//       summary.value = summary_exists;
-//     }
-//   }
-// }
+const checkSummarySilently = async () => {
+  if (selectedEmail.value && !summary.value) {
+    const summary_exists = await databaseService.get_summary(selectedEmail.value.id);
+    if (summary_exists) {
+      summary.value = summary_exists;
+    }
+  }
+}
 
-// const triggerSummaryInBackground = (email: EmailDetailResponse) => {
-//   const req: DifySummaryRequest = {
-//     sender: email.sender,
-//     msg_id: email.msg_id,
-//     plain_text: email.plain_text || '',
-//     email_tags: email.tag || []
-//   }
-//   difyService.getSummary(req)
-// }
-
-
+const triggerSummaryInBackground = (email:any) => {
+  const req: DifySummaryRequest = {
+    sender: email.sender,
+    msg_id: email.msg_id,
+    plain_text: email.plain_text || '',
+    email_tags: email.tag || []
+  }
+  difyService.getSummary(req)
+}
 
 const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
@@ -190,10 +171,8 @@ const prevPage = async () => {
 }
 
 const getTotalMessage = async () => {
-  loading.value = true
-  const response = await userService.get_profile()
+  const response = await emailService.getLabelById(labels[0])
   if (response.messagesTotal) totalMessage.value = response.messagesTotal
-  loading.value = false
 }
 
 const handleDrag = (clientX: number) => {
@@ -217,7 +196,6 @@ onMounted(() => {
       true
     )
   }
-  getTotalMessage()
 })
 
 // watch(emailList, (newList) => {
@@ -251,8 +229,8 @@ onMounted(() => {
     >
       <EmailList
         :emails="emailList"
-        :selectedEmail="selectedEmail"
-        :loading="loading"
+        :selectedEmail="selectedEmail?.id || ''"
+        :loading="uiStore.isLoading"
         :current-page="currentPage + 1"
         :total-message="totalMessage"
         :limit="limit"

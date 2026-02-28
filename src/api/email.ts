@@ -4,7 +4,8 @@ import {
     MessageBatchModifyLabelRequest, MessageModifyLabelRequest
 } from '../interface/request'
 import {
-    CategoryListResponse
+    CategoryListResponse,
+    FetchMessagesResponse
 } from '../interface/response'
 import {
     Attachment
@@ -20,7 +21,7 @@ export default {
         param: MessagesParam
     ) {
         try {
-            const response = await api.get<any  >('/email/messages', 
+            const response = await api.get<FetchMessagesResponse>('/email/messages', 
                 {
                     params: param,
                     paramsSerializer: {

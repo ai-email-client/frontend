@@ -12,8 +12,10 @@ export const useLabelStore = defineStore('labels', () => {
     const initialize = async () => {
         if (isReady.value) return
             try {
-                const response: CategoryListResponse = await emailService.getLabels()
-                const currentCategories = response.categories || []
+                if (!rawLabels.value.length) {
+                    rawLabels.value = await getLabels()
+                } 
+                const currentCategories = rawLabels.value || []
 
                 const categoryMap = new Map<string, Category>()
                 
@@ -35,13 +37,17 @@ export const useLabelStore = defineStore('labels', () => {
                         missingCategories.push(catEnum)
                     }
                 })
+                if (missingCategories.length === 0) {
+                    rawLabels.value = [...currentCategories]
+                    return
+                }
 
                 let newCategories: Category[] = []
                 if (missingCategories.length > 0) {
                     try {
                         const syncResponse = await emailService.syncLabels(missingCategories)
-                        if (syncResponse && syncResponse.categories) {
-                            newCategories = syncResponse.categories
+                        if (syncResponse && syncResponse.labels) {
+                            newCategories = syncResponse.labels
                             
                             newCategories.forEach(cat => {
                                 if (cat.name) {
@@ -63,8 +69,14 @@ export const useLabelStore = defineStore('labels', () => {
             }
     }
 
-    const getLabelIdByName = (name: string) => {
-        return categoryLabels.value[name?.toLowerCase()]?.id
+    const getLabels = async () => {
+        const response: CategoryListResponse = await emailService.getLabels()
+        rawLabels.value = response.labels || []
+        return response.labels || []
+    }
+
+    const getLabelIdByName = (name: string): string => {
+        return rawLabels.value.find((label: Category) => label.name === name)?.id || ''
     }
 
     const getLabelById = (id: string) => {
@@ -92,6 +104,7 @@ export const useLabelStore = defineStore('labels', () => {
         rawLabels,
         isReady,
         initialize,
+        getLabels,
         getLabelIdByName,
         getLabelById,
         getLabelByIds,

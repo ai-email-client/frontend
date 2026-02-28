@@ -1,5 +1,5 @@
 import { DifySummary } from './dify';
-import { Attachment, Payload, Sender } from './email';
+import { Attachment, Message, Payload, Sender } from './email';
 import { Category } from './category';
 
 export interface AttachmentResponse {
@@ -9,7 +9,7 @@ export interface AttachmentResponse {
 }
 
 export interface FetchMessagesResponse {
-  messages: MessagesResponse[]
+  messages: Message[]
   nextPageToken: string
   resultSizeEstimate: number
 }
@@ -136,7 +136,7 @@ export interface EmailFetchPlainResponse {
 }
 
 export interface CategoryListResponse {
-  categories: Category[];
+  labels: Category[];
 }
 export interface LoginResponse {
   url: string

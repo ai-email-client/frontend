@@ -17,15 +17,15 @@ import { ref } from 'vue'
 
 import { CategoryMenuItem, CategoryEnum } from '../interface/category'
 import { formatLabel } from '../utils';
-import { UserProfile } from '../interface/user';
 import { SpamType } from '../interface/spam';
 import { LogOut } from 'lucide-vue-next'
 import { useRouter } from 'vue-router';
+import { useUiStore } from '../stores/uiStore';
 
 const router = useRouter()
+const uiStore = useUiStore()
 
 defineProps<{
-  user: UserProfile | null,
   collapsed: boolean,
   darkMode: boolean
 }>()
@@ -107,14 +107,20 @@ const menuItems = ref<CategoryMenuItem[]>([
         <Mail :size="26" />
       </div>
 
-      <button @click="$emit('toggleCollapse')" class="p-1.5 rounded-lg hover:bg-gray-200/20 transition-colors"
-        :class="{ 'p-1.5': collapsed }">
+      <button @click="$emit('toggleCollapse')" 
+        :disabled="uiStore.isLoading"
+        class="rounded-lg transition-colors"
+        :class="[
+          { 'p-1.5': collapsed },
+          uiStore.isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200/20 p-1.5'
+        ]">
         <ChevronRight v-if="collapsed" :size="18" />
         <ChevronLeft v-else :size="18" />
       </button>
     </div>
 
-    <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
+    <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar transition-opacity duration-300"
+      :class="{ 'pointer-events-none opacity-50': uiStore.isLoading }">
       <template v-for="(item, index) in menuItems" :key="index">
 
         <router-link v-if="!item.children" :to="item.to!" custom v-slot="{ navigate, isActive }">
@@ -172,19 +178,26 @@ const menuItems = ref<CategoryMenuItem[]>([
       <div class="flex items-center gap-3">
         <div
           class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg shrink-0">
-          {{ user?.emailAddress?.charAt(0).toUpperCase() }}
+          <!-- {{ user?.emailAddress?.charAt(0).toUpperCase() || 'U' }} -->
         </div>
 
         <div v-if="!collapsed" class="flex-1 min-w-0 flex items-center justify-between group">
           <div class="flex-1 min-w-0 mr-2">
             <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
-              {{ user?.emailAddress }}
+              <!-- {{ user?.emailAddress || 'User' }} -->
             </p>
           </div>
 
-          <button @click="handleLogout" class="p-1.5 rounded-md transition-colors duration-200" :class="darkMode
-            ? 'text-gray-400 hover:text-red-400 hover:bg-gray-800'
-            : 'text-gray-500 hover:text-red-600 hover:bg-gray-100'" title="Logout">
+          <button @click="handleLogout" 
+            :disabled="uiStore.isLoading"
+            class="p-1.5 rounded-md transition-colors duration-200" 
+            :class="[
+              darkMode
+                ? 'text-gray-400 hover:text-red-400 hover:bg-gray-800'
+                : 'text-gray-500 hover:text-red-600 hover:bg-gray-100',
+              uiStore.isLoading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+            ]" 
+            title="Logout">
             <LogOut class="w-5 h-5" />
           </button>
         </div>

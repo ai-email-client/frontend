@@ -8,10 +8,7 @@ import {
     AttachmentResponse,
     CreateLabelResponse,
     CategoryListResponse,
-    EmailDetailResponse,
-    EmailFetchResponse,
     FetchMessagesResponse,
-    MessageMinimalResponse,
     MessageMetaDataResponse,
 } from '../interface/response'
 
@@ -93,6 +90,9 @@ const emailService = {
     ): Promise<Category> => {
         try {
             const data = await emailAPI.getLabelById(labelId)
+            if (!data) {
+                throw new Error('Label not found')
+            }
             return data
         } catch (err) {
             console.error('Fetch error:', err)
@@ -116,6 +116,9 @@ const emailService = {
     ): Promise<CategoryListResponse> => {
         try {
             const data = await emailAPI.syncLabels(names)
+            if (!data) {
+                throw new Error('Sync labels failed')
+            }
             return data
         } catch (err) {
             console.error('Fetch error:', err)
@@ -134,6 +137,9 @@ const emailService = {
     initLabels: async (): Promise<CategoryListResponse> => {
         try {
             const data = await emailAPI.initLabel()
+            if (!data) {
+                throw new Error('Init labels failed')
+            }
             return data
         } catch (err) {
             console.error('Fetch error:', err)

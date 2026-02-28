@@ -28,8 +28,8 @@ export enum CategoryType {
 }
 
 export interface CategoryColor {
-  textColor: string;
-  backgroundColor: string;
+  textColor?: string;
+  backgroundColor?: string;
 }
 
 export interface Category {

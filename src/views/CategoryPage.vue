@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {
   ref,
-  onMounted,
   computed,
   watch
 } from 'vue'
 import {
-  useRoute
+  useRoute,
+  useRouter
 } from 'vue-router'
 
 import EmailList from '../components/EmailList.vue'
@@ -14,17 +14,18 @@ import EmailDetail from '../components/EmailDetail.vue'
 import Divider from '../components/Divider.vue'
 
 import {
-  EmailShortResponse,
-  EmailDetailResponse
+  MessageMetaDataResponse
 } from '../interface/response'
 
 import { useLabelStore } from '../stores/categoryStore'
 import emailService from '../services/email'
-import databaseService from '../services/database'
-import { DifySummary } from '../interface/dify'
+import { Message } from '../interface/email'
+import { useUiStore } from '../stores/uiStore'
 
+const router = useRouter()
 const route = useRoute()
 const labelStore = useLabelStore()
+const uiStore = useUiStore()
 
 const props = defineProps<{
   darkMode: boolean
@@ -35,10 +36,8 @@ const emit = defineEmits(['update:listWidth'])
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
-const emailList = ref<EmailShortResponse[]>([])
-const selectedEmail = ref<EmailDetailResponse | null>(null)
-const isLoadingEmail = ref(false)
-const summary = ref<DifySummary | null>(null)
+const emailList = ref<MessageMetaDataResponse[]>([])
+const selectedEmail = ref<Message | null>(null)
 
 // ── Layout Control ──
 const MIN_PX  = 80
@@ -53,83 +52,82 @@ const currentWidth = computed({
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
 
-const loading         = ref(false)
-const limit           = 5
+const limit           = 10
 const nextPageToken   = ref<string | null>(null)
-const stackToken      = ref<(string | null)[]>([null])
+const stackToken      = ref<string[]>([""])
 const currentPage     = ref(0)
 const totalMessage    = ref(1)
-
-const getCurrentLabel = () => {
-  const currentCategoryName = route.params.category as string
-  return [labelStore.getLabelIdByName(currentCategoryName.toLowerCase()) || '']
-}
 
 const resetPagination = () => {
   emailList.value = []
   currentPage.value   = 0
   totalMessage.value  = 1
-  stackToken.value    = [null]
+  stackToken.value    = [""]
   nextPageToken.value = null
+
 }
+const currentLabel = computed((): string[] => {
+  const currentCategoryName = route.params.category;
+
+  const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
+  
+  return labelId ? [labelId] : [];
+})
 
 const fetchEmails = async (
-  labels: string[],
-  limit: number,
-  pageToken: string | null,
-  q: string | null,
-  is_next: boolean = false
+  labelIds: string[],
+  maxResults: number,
+  pageToken: string,
+  query: string,
+  includeSpamTrash: boolean
 ) => {
-  loading.value = true
-  selectedEmail.value = null
-  getTotalMessage()
   try {
-    const newEmails = await emailService.fetchEmails(labels, limit, pageToken, q, is_next)
-    emailList.value = newEmails.messages
-    nextPageToken.value = newEmails.page_token
-    loading.value = false
+    uiStore.setLoading(true)
+    getTotalMessage()
+    const response = await emailService.fetchEmails(
+      labelIds, maxResults, pageToken, query, includeSpamTrash
+    )
+    nextPageToken.value = response.nextPageToken
+    if (!stackToken.value.includes(response.nextPageToken)) {
+      stackToken.value.push(response.nextPageToken)
+    }
+    emailList.value = response.messages    
+
   } catch (error) {
     console.error('Failed to fetch emails', error)
+  } finally {
+    uiStore.setLoading(false)
   }
-}
-
-const getEmailById = async (msgId: string) => {
-  if (!msgId) return
-  isLoadingEmail.value = true
-  selectedEmail.value = null
-  summary.value = null
-  const response = await emailService.getMessageByID(msgId)
-  selectedEmail.value = response
-  const summary_exists = await databaseService.get_summary(msgId)
-  if (summary_exists) summary.value = summary_exists
-  isLoadingEmail.value = false
 }
 
 const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
   emailList.value = []
-  const targetPage = currentPage.value
-  let tokenToUse: string | null = null
-  if (targetPage < stackToken.value.length) {
-    tokenToUse = stackToken.value[targetPage]
-  } else {
-    tokenToUse = nextPageToken.value
-  }
-  await fetchEmails(getCurrentLabel(), limit, tokenToUse, null, true)
-  if (targetPage >= stackToken.value.length) stackToken.value.push(tokenToUse)
+  await fetchEmails(
+    currentLabel.value,
+    limit,
+    stackToken.value[currentPage.value],
+    '',
+    true
+  )
 }
 
 const prevPage = async () => {
   if (currentPage.value === 0) return
   currentPage.value--
   emailList.value = []
-  const tokenToUse = stackToken.value[currentPage.value]
-  await fetchEmails(getCurrentLabel(), limit, tokenToUse, null, true)
+  await fetchEmails(
+    currentLabel.value,
+    limit,
+    stackToken.value[currentPage.value],
+    '',
+    true
+  )
 }
 
 const getTotalMessage = async () => {
-  const response = await emailService.getLabelById(getCurrentLabel()[0])
+  const response = await emailService.getLabelById(currentLabel.value[0])
   if (response.messagesTotal) totalMessage.value = response.messagesTotal
 }
 
@@ -144,15 +142,16 @@ const handleDrag = (clientX: number) => {
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 350 }
 
-onMounted(() => {
-  if (localStorage.getItem('jwt_token')) {
-    fetchEmails(getCurrentLabel(), limit, stackToken.value[0], null)
-  }
-})
-
-watch(() => route.params.category, () => {
-  resetPagination()
-  fetchEmails(getCurrentLabel(), limit, null, null)
+watch(() => route.params.category, async () => {
+    await router.isReady()
+    resetPagination()
+    fetchEmails(
+      currentLabel.value,
+      limit,
+      stackToken.value[currentPage.value],
+      '',
+      true
+    )
 }, { immediate: true })
 
 </script>
@@ -169,15 +168,21 @@ watch(() => route.params.category, () => {
     >
       <EmailList
         :emails="emailList"
-        :selected-email="selectedEmail"
-        :loading="loading"
+        :selectedEmail="selectedEmail?.id || ''"
+        :loading="uiStore.isLoading"
         :current-page="currentPage + 1"
         :total-message="totalMessage"
         :limit="limit"
         :dark-mode="darkMode"
         :collapsed="collapsed"
-        @select="(msgId: string) => getEmailById(msgId)"
-        @refresh="() => fetchEmails(getCurrentLabel(), limit, stackToken[currentPage], null)"
+        @select=""
+        @refresh="() => fetchEmails(
+          currentLabel,
+          limit,
+          stackToken[currentPage],
+          '',
+          true
+        )"
         @prevPage="prevPage"
         @nextPage="nextPage"
       />
@@ -196,13 +201,13 @@ watch(() => route.params.category, () => {
       class="flex-col flex-1 min-w-0"
       :class="showViewer ? 'flex' : 'hidden md:flex'"
     >
-      <EmailDetail
+      <!-- <EmailDetail
         :email="selectedEmail"
         :summary="summary"
         :loading="isLoadingEmail"
         :dark-mode="darkMode"
         @back="selectedEmail = null"
-      />
+      /> -->
     </div>
   </div>
 </template>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useLabelStore } from '../stores/categoryStore'
 
 const route = useRoute()
 const router = useRouter()
 const statusMessage = ref('')
 const isError = ref(false)
+const labelStore = useLabelStore()
 
 onMounted(async () => {
 
