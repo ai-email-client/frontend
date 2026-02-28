@@ -1,78 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { Category, CategoryEnum} from '../interface/category'
+import { Category} from '../interface/category'
 import emailService from '../services/email'
 import { CategoryListResponse } from '../interface/response'
 
 export const useLabelStore = defineStore('labels', () => {
     const categoryLabels = ref<Record<string, Category>>({})
     const rawLabels = ref<Category[]>([])
-    const isReady = ref(false)
-
-    const initialize = async () => {
-        if (isReady.value) return
-            try {
-                if (!rawLabels.value.length) {
-                    rawLabels.value = await getLabels()
-                } 
-                const currentCategories = rawLabels.value || []
-
-                const categoryMap = new Map<string, Category>()
-                
-                currentCategories.forEach((cat) => {
-                    if (cat.name) {
-                        categoryMap.set(cat.name.toLowerCase(), cat)
-                    }
-                })
-
-                const missingCategories: string[] = []
-                
-                Object.values(CategoryEnum).forEach((catEnum) => {
-                    const key = catEnum.toLowerCase()
-                    const foundCategory = categoryMap.get(key)
-
-                    if (foundCategory) {
-                        categoryLabels.value[key] = foundCategory
-                    } else {
-                        missingCategories.push(catEnum)
-                    }
-                })
-                if (missingCategories.length === 0) {
-                    rawLabels.value = [...currentCategories]
-                    return
-                }
-
-                let newCategories: Category[] = []
-                if (missingCategories.length > 0) {
-                    try {
-                        const syncResponse = await emailService.syncLabels(missingCategories)
-                        if (syncResponse && syncResponse.labels) {
-                            newCategories = syncResponse.labels
-                            
-                            newCategories.forEach(cat => {
-                                if (cat.name) {
-                                    categoryLabels.value[cat.name.toLowerCase()] = cat
-                                }
-                            })
-                        }
-                    } catch (syncError) {
-                        console.error("Sync Labels Failed (Non-blocking):", syncError)
-                    }
-                }
-
-                rawLabels.value = [...currentCategories, ...newCategories]
-
-            } catch (error) {
-                console.error("Store Init Failed:", error)
-            } finally {
-                isReady.value = true 
-            }
-    }
 
     const getLabels = async () => {
-        const response: CategoryListResponse = await emailService.getLabels()
+        if (rawLabels.value.length > 0) {
+            return
+        }
+
+        const response: CategoryListResponse = await emailService.syncLabels()
         rawLabels.value = response.labels || []
-        return response.labels || []
     }
 
     const getLabelIdByName = (name: string): string => {
@@ -102,8 +44,6 @@ export const useLabelStore = defineStore('labels', () => {
     return {
         categoryLabels,
         rawLabels,
-        isReady,
-        initialize,
         getLabels,
         getLabelIdByName,
         getLabelById,

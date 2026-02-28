@@ -13,7 +13,6 @@ import {
 
 import {
   Moon,
-  Loader2,
   Sun
 } from 'lucide-vue-next'
 import AppSidebar from './components/AppSidebar.vue'
@@ -83,14 +82,12 @@ onMounted(async () => {
   
   if (navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === "reload") {
     await handleAuthCheck()
-    if (!labelStore.rawLabels.length) {
-      await labelStore.getLabels()
-    }
     router.replace('/inbox') 
   }
+  
   await router.isReady()
   await handleAuthCheck()
-  uiStore.setLoading(false)
+  await labelStore.getLabels()
 })
 
 watch(

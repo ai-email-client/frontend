@@ -14,12 +14,13 @@ import {
 } from '../interface/response';
 import { useLabelStore } from '../stores/categoryStore';
 import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue } from '../utils';
+import { Message } from '../interface/email';
 
 const labelStore = useLabelStore();
 
 defineProps<{
   emails: MessageMetaDataResponse[],
-  selectedEmail: string ,
+  selectedEmail: Message|null ,
   darkMode: boolean,
   loading: boolean
   currentPage: number
@@ -66,7 +67,7 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           @click="$emit('select', email.id)"
           class="relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-150 shrink-0 shadow-sm"
           :class="[
-            selectedEmail === email.id
+            selectedEmail?.id === email.id
               ? 'bg-blue-600 text-white scale-110 shadow-md'
               : (darkMode
                   ? 'bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-105'
@@ -173,11 +174,11 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
         <div
           v-for="email in emails"
           :key="email.id"
-          @click="$emit('select', email.id)"
+          @click="$emit('select', email)"
           class="p-4 border-b border-l-4 cursor-pointer transition-all group relative"
           :class="[
             darkMode ? 'border-b-gray-800' : 'border-b-gray-100',
-            selectedEmail === email.id
+            selectedEmail?.id === email.id
               ? (darkMode ? 'bg-blue-500/20 border-l-blue-500' : 'bg-blue-50 border-l-blue-500')
               : (darkMode ? 'border-l-transparent hover:bg-gray-800' : 'border-l-transparent hover:bg-gray-50')
           ]"

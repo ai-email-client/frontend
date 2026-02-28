@@ -1,5 +1,6 @@
 import type {
     Attachment,
+    Message,
 } from '../interface/email'
 import {
     Category
@@ -9,7 +10,6 @@ import {
     CreateLabelResponse,
     CategoryListResponse,
     FetchMessagesResponse,
-    MessageMetaDataResponse,
 } from '../interface/response'
 
 import emailAPI from '../api/email'
@@ -39,7 +39,7 @@ const emailService = {
     getMessageByID: async (
         msgId: string,
         param: MessageParam
-    ): Promise<MessageMetaDataResponse> => {
+    ): Promise<Message> => {
         if (!msgId) {
             throw new Error('Message ID is required')
         }
@@ -111,11 +111,9 @@ const emailService = {
             throw err
         }
     },
-    syncLabels: async (
-        names: string[]
-    ): Promise<CategoryListResponse> => {
+    syncLabels: async (): Promise<CategoryListResponse> => {
         try {
-            const data = await emailAPI.syncLabels(names)
+            const data = await emailAPI.syncLabels()
             if (!data) {
                 throw new Error('Sync labels failed')
             }

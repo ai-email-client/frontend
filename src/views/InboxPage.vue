@@ -7,7 +7,7 @@ import {
 } from 'vue'
 
 import EmailList from '../components/EmailList.vue'
-// import EmailDetail from '../components/EmailDetail.vue'
+import EmailDetail from '../components/EmailDetail.vue'
 import Divider from '../components/Divider.vue'
 import type { UserProfile } from '../interface/user'
 
@@ -17,7 +17,6 @@ import {
 
 import emailService from '../services/email'
 import difyService from '../services/dify'
-import userService from '../services/user'
 import databaseService from '../services/database'
 import { DifySummary } from '../interface/dify'
 import { DifySummaryRequest } from '../interface/request'
@@ -81,6 +80,7 @@ const fetchEmails = async (
 ) => {
   try {
     uiStore.setLoading(true)
+    selectedEmail.value = null
     getTotalMessage()
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash
@@ -183,6 +183,22 @@ const handleDrag = (clientX: number) => {
   currentWidth.value = newWidth
 }
 
+const handleSelectEmail = async (email: Message) => {
+  try {
+    uiStore.setLoading(true)
+    const _email = await emailService.getMessageByID(email.id,
+      {
+        format: 'full'
+      }
+    )
+    selectedEmail.value = _email
+  } catch (error) {
+    console.error('Failed to fetch email', error)
+  } finally {
+    uiStore.setLoading(false)
+  }
+}
+
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 450 }
 
@@ -229,14 +245,14 @@ onMounted(() => {
     >
       <EmailList
         :emails="emailList"
-        :selectedEmail="selectedEmail?.id || ''"
+        :selectedEmail="selectedEmail"
         :loading="uiStore.isLoading"
         :current-page="currentPage + 1"
         :total-message="totalMessage"
         :limit="limit"
         :dark-mode="darkMode"
         :collapsed="collapsed"
-        @select=""
+        @select="handleSelectEmail"
         @refresh="() => fetchEmails(
           labels,
           limit,
@@ -257,7 +273,7 @@ onMounted(() => {
         @expand="handleExpand"
       />
     </div>
-<!-- 
+
     <div
       class="flex-col flex-1 min-w-0"
       :class="showViewer ? 'flex' : 'hidden md:flex'"
@@ -265,10 +281,10 @@ onMounted(() => {
       <EmailDetail
         :email="selectedEmail"
         :summary="summary"
-        :loading="isLoadingEmail"
+        :loading="uiStore.isLoading"
         :dark-mode="darkMode"
         @back="selectedEmail = null"
       />
-    </div> -->
+    </div>
   </div>
 </template>

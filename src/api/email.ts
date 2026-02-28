@@ -111,12 +111,9 @@ export default {
         }
     },
 
-    async syncLabels(names: string[]) {
+    async syncLabels() {
         try {
-            const payload = {
-                names: names
-            }
-            const response = await api.post<CategoryListResponse>('/email/labels/sync', payload)
+            const response = await api.get<CategoryListResponse>('/email/labels/sync')
             return response.data
         } catch (error) {
             throw error

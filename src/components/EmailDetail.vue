@@ -5,7 +5,8 @@ import {
   senderFormat,
   getLabel,
   formatDateTime,
-  getFirstCharacter
+  getFirstCharacter,
+  getHeaderValue
 } from '../utils'
 
 import {
@@ -23,13 +24,13 @@ import {
 
 import EmailShadow from './EmailShadow.vue'
 import { useLabelStore } from '../stores/categoryStore'
-import { EmailDetailResponse } from '../interface/response'
 import Summary from './Summary.vue';
 import { DifySummary } from '../interface/dify';
+import { Message } from '../interface/email';
 
 const props = defineProps<{
-  email: EmailDetailResponse | null,
-  summary: DifySummary | null,
+  email: Message | null,
+  // summary: DifySummary | null,
   loading: boolean,
   darkMode: boolean
 }>()
@@ -37,12 +38,12 @@ const props = defineProps<{
 const showHtml = ref(true)
 const labelStore = useLabelStore()
 
-const hasHtml = computed(() => !!props.email?.html && props.email.html.trim().length > 0)
-const hasText = computed(() => !!props.email?.plain_text && props.email.plain_text.trim().length > 0)
+const hasHtml = computed(() => !!props.email?.text_html && props.email.text_html.trim().length > 0)
+const hasText = computed(() => !!props.email?.text_plain && props.email.text_plain.trim().length > 0)
 
 const avatarHue = computed(() => {
   if (!props.email) return 0
-  const name = senderFormat(props.email?.sender)?.name ?? ''
+  const name = senderFormat(getHeaderValue(props.email.payload.headers, 'From'))?.name ?? ''
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return Math.abs(hash) % 360
@@ -50,8 +51,8 @@ const avatarHue = computed(() => {
 
 watch(() => props.email, (newEmail) => {
   if (!newEmail) return
-  const _hasHtml = !!newEmail.html && newEmail.html.trim().length > 0
-  const _hasText = !!newEmail.plain_text && newEmail.plain_text.trim().length > 0
+  const _hasHtml = !!newEmail.text_html && newEmail.text_html.trim().length > 0
+  const _hasText = !!newEmail.text_plain && newEmail.text_plain.trim().length > 0
   showHtml.value = _hasHtml ? true : _hasText ? false : true
 }, { immediate: true })
 
@@ -139,10 +140,10 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           class="text-2xl font-bold leading-snug tracking-tight flex items-center justify-between gap-4 p-4 rounded-2xl border"
           :class="darkMode ? 'text-white bg-gray-800/50 border-gray-700/40' : 'text-gray-900 bg-white border-gray-100 shadow-sm'"
         >
-          {{ email.subject || '(No Subject)' }}
+          {{ getHeaderValue(email.payload.headers, 'Subject') || '(No Subject)' }}
         </h2>
 
-        <Summary :data="summary" :darkMode="darkMode" :loading="loading" />
+        <!-- <Summary :data="summary" :darkMode="darkMode" :loading="loading" /> -->
 
         <div
           class="flex items-center justify-between gap-4 p-4 rounded-2xl border"
@@ -157,7 +158,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                 background: `hsl(${avatarHue}, 60%, ${darkMode ? '38%' : '48%'})`
               }"
             >
-              {{ getFirstCharacter(senderFormat(email?.sender)?.name ?? '') }}
+              {{ getFirstCharacter(senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name ?? '') }}
             </div>
 
             <div class="min-w-0">
@@ -166,18 +167,18 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                   class="font-semibold text-sm truncate"
                   :class="darkMode ? 'text-gray-100' : 'text-gray-900'"
                 >
-                  {{ senderFormat(email?.sender)?.name }}
+                  {{ senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name }}
                 </span>
                 <span
                   class="text-xs truncate"
                   :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  &lt;{{ senderFormat(email?.sender)?.email }}&gt;
+                  &lt;{{ senderFormat(getHeaderValue(email.payload.headers, 'From'))?.email }}&gt;
                 </span>
               </div>
               <div class="flex flex-wrap gap-1.5 mt-1">
                 <span
-                  v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.tag))"
+                  v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.labelIds))"
                   :key="index"
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-black/5"
                   :style="{ backgroundColor: label?.color?.backgroundColor, color: label?.color?.textColor }"
@@ -194,7 +195,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             :class="darkMode ? 'bg-gray-700/60 text-gray-400' : 'bg-gray-100 text-gray-500'"
           >
             <Clock :size="12" />
-            {{ formatDateTime(email.time) }}
+            {{ formatDateTime(getHeaderValue(email.payload.headers, 'Date')) }}
           </div>
         </div>
 
@@ -203,7 +204,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           :class="darkMode ? 'border-gray-700/40' : 'border-gray-100 shadow-sm'"
         >
           <div v-if="showHtml" class="bg-white">
-            <EmailShadow :content="sanitizeHtml(props.email?.html)" />
+            <EmailShadow :content="sanitizeHtml(props.email?.text_html)" />
           </div>
 
           <div
@@ -211,11 +212,11 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             class="whitespace-pre-wrap font-mono text-sm leading-7 p-6"
             :class="darkMode ? 'bg-gray-800/60 text-gray-300' : 'bg-white text-gray-700'"
           >
-            {{ email.plain_text }}
+            {{ email.text_plain }}
           </div>
         </div>
 
-        <div
+        <!-- <div
           v-if="email.attachments && email.attachments.length > 0"
           class="pt-2"
         >
@@ -265,7 +266,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
               </button>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <div
           class="flex gap-3 pt-4 pb-10 border-t"

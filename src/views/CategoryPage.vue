@@ -83,6 +83,7 @@ const fetchEmails = async (
 ) => {
   try {
     uiStore.setLoading(true)
+    selectedEmail.value = null
     getTotalMessage()
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash
@@ -139,6 +140,22 @@ const handleDrag = (clientX: number) => {
   currentWidth.value = newWidth
 }
 
+const handleSelectEmail = async (email: Message) => {
+  try {
+    uiStore.setLoading(true)
+    const _email = await emailService.getMessageByID(email.id,
+      {
+        format: 'full'
+      }
+    )
+    selectedEmail.value = _email
+  } catch (error) {
+    console.error('Failed to fetch email', error)
+  } finally {
+    uiStore.setLoading(false)
+  }
+}
+
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 350 }
 
@@ -168,14 +185,14 @@ watch(() => route.params.category, async () => {
     >
       <EmailList
         :emails="emailList"
-        :selectedEmail="selectedEmail?.id || ''"
+        :selectedEmail="selectedEmail"
         :loading="uiStore.isLoading"
         :current-page="currentPage + 1"
         :total-message="totalMessage"
         :limit="limit"
         :dark-mode="darkMode"
         :collapsed="collapsed"
-        @select=""
+        @select="handleSelectEmail"
         @refresh="() => fetchEmails(
           currentLabel,
           limit,
@@ -201,13 +218,12 @@ watch(() => route.params.category, async () => {
       class="flex-col flex-1 min-w-0"
       :class="showViewer ? 'flex' : 'hidden md:flex'"
     >
-      <!-- <EmailDetail
+      <EmailDetail
         :email="selectedEmail"
-        :summary="summary"
-        :loading="isLoadingEmail"
+        :loading="uiStore.isLoading"
         :dark-mode="darkMode"
         @back="selectedEmail = null"
-      /> -->
+      />
     </div>
   </div>
 </template>
