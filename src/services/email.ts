@@ -1,5 +1,6 @@
 import type {
     Attachment,
+    Draft,
     Message,
 } from '../interface/email'
 import {
@@ -13,7 +14,7 @@ import {
 } from '../interface/response'
 
 import emailAPI from '../api/email'
-import { MessageModifyLabelRequest } from '../interface/request'
+import { DraftCreateRequest, MessageModifyLabelRequest } from '../interface/request'
 import { MessageParam } from '../interface/param'
 
 const emailService = {
@@ -149,6 +150,40 @@ const emailService = {
     ): Promise<void> => {
         try {
             await emailAPI.messageModify(req)
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    createDraft: async (
+        body: DraftCreateRequest
+    ): Promise<Draft> => {
+        try {
+            const data = await emailAPI.create_draft(body)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    updateDraft: async (
+        draftId: string,
+        body: DraftCreateRequest
+    ): Promise<Draft> => {
+        try {
+            const data = await emailAPI.update_draft(draftId, body)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    sendDraft: async (
+        draftId: string
+    ): Promise<Message> => {
+        try {
+            const data = await emailAPI.send_draft(draftId)
+            return data
         } catch (err) {
             console.error('Fetch error:', err)
             throw err

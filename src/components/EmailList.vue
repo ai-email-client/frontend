@@ -29,7 +29,13 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
+const emit = defineEmits([
+  'select', 
+  'refresh', 
+  'prevPage', 
+  'nextPage', 
+  'draftEmail',
+])
 </script>
 <template>
   <div
@@ -97,11 +103,12 @@ defineEmits(['select', 'refresh', 'prevPage', 'nextPage', 'sendEmail'])
           </button>
           <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'">Inbox</h2>
           <button
-            @click="$emit('sendEmail')"
+            @click="$emit('draftEmail')"
             :disabled="loading"
-            class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
+            class="p-2 rounded-full hover:bg-gray-100 transition-all"
+            title="Draft"
           >
-            <PenSquare :size="18" />
+            <PenSquare :size="18" :class="darkMode ? 'text-gray-400' : 'text-gray-500'" />
           </button>
         </div>
 

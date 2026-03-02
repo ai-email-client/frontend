@@ -51,8 +51,20 @@ const currentWidth = computed({
 
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
+const currentLabel = computed((): string[] => {
+  const currentCategoryName = route.params.category;
 
-const limit           = 10
+  const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
+  
+  return labelId ? [labelId] : [];
+})
+
+// Params
+const labels            = currentLabel
+const limit             = 20
+const query             = ''
+const includeSpamTrash  = false
+
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
 const currentPage     = ref(0)
@@ -66,13 +78,7 @@ const resetPagination = () => {
   nextPageToken.value = null
 
 }
-const currentLabel = computed((): string[] => {
-  const currentCategoryName = route.params.category;
 
-  const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
-  
-  return labelId ? [labelId] : [];
-})
 
 const fetchEmails = async (
   labelIds: string[],
@@ -106,11 +112,11 @@ const nextPage = async () => {
   currentPage.value++
   emailList.value = []
   await fetchEmails(
-    currentLabel.value,
+    labels.value,
     limit,
     stackToken.value[currentPage.value],
-    '',
-    true
+    query,
+    includeSpamTrash
   )
 }
 
@@ -119,11 +125,11 @@ const prevPage = async () => {
   currentPage.value--
   emailList.value = []
   await fetchEmails(
-    currentLabel.value,
+    labels.value,
     limit,
     stackToken.value[currentPage.value],
-    '',
-    true
+    query,
+    includeSpamTrash
   )
 }
 
@@ -163,11 +169,11 @@ watch(() => route.params.category, async () => {
     await router.isReady()
     resetPagination()
     fetchEmails(
-      currentLabel.value,
+      labels.value,
       limit,
       stackToken.value[currentPage.value],
-      '',
-      true
+      query,
+      includeSpamTrash
     )
 }, { immediate: true })
 
@@ -194,11 +200,11 @@ watch(() => route.params.category, async () => {
         :collapsed="collapsed"
         @select="handleSelectEmail"
         @refresh="() => fetchEmails(
-          currentLabel,
+          labels,
           limit,
           stackToken[currentPage],
-          '',
-          true
+          query,
+          includeSpamTrash
         )"
         @prevPage="prevPage"
         @nextPage="nextPage"

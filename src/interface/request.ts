@@ -62,6 +62,7 @@ export interface MessageModifyLabelRequest {
 }
 
 export interface DraftCreateRequest {
-  id: string;
-  message: Message;
+  to: string;
+  subject: string;
+  body: string;
 }

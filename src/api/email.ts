@@ -1,6 +1,7 @@
 import api from './api'
 
 import {
+    DraftCreateRequest,
     MessageBatchModifyLabelRequest, MessageModifyLabelRequest
 } from '../interface/request'
 import {
@@ -8,7 +9,9 @@ import {
     FetchMessagesResponse
 } from '../interface/response'
 import {
-    Attachment
+    Attachment,
+    Draft,
+    Message
 
 } from '../interface/email'
 import {
@@ -36,7 +39,6 @@ export default {
             throw error
         }
     },
-
     async get_message_by_id(
         id: string,
         param: MessageParam
@@ -55,7 +57,6 @@ export default {
             console.error("Error get message by id:", error.response.data)
         }
     },
-
     async downloadAttachment(file: Attachment, msgId: string) {
         try {
             const payload = {
@@ -86,7 +87,6 @@ export default {
             throw error
         }
     },
-
     async createLabel(body: Category) {
         try {
 
@@ -101,7 +101,6 @@ export default {
             throw error
         }
     },
-
     async initLabel() {
         try {
             const response = await api.post<CategoryListResponse>('/email/initialize/labels')
@@ -110,7 +109,6 @@ export default {
             throw error
         }
     },
-
     async syncLabels() {
         try {
             const response = await api.get<CategoryListResponse>('/email/labels/sync')
@@ -119,7 +117,6 @@ export default {
             throw error
         }
     },
-
     async messageModify(body: MessageModifyLabelRequest) {
         try {
 
@@ -133,7 +130,6 @@ export default {
             throw error
         }
     },
-
     async messageBatchModify(body: MessageBatchModifyLabelRequest) {
         try {
             const payload = {
@@ -156,10 +152,7 @@ export default {
     },
     async messageBatchDelete(ids: string[]) {
         try {
-
-
             const payload = {
-
                 ids: ids
             }
             const response = await api.post<CategoryListResponse>('/email/message/batch_delete', payload)
@@ -184,6 +177,36 @@ export default {
             throw error
         }
     },
+    async create_draft(body: DraftCreateRequest) {
+        try {
+            const payload = {
+                body
+            }
+            const response = await api.post<Draft>('/email/draft/create', payload)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async update_draft(draftId: string, body: DraftCreateRequest) {
+        try {
+            const payload = {
+                body
+            }
+            const response = await api.put<Draft>(`/email/draft/${draftId}`, payload)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async send_draft(draftId: string) {
+        try {
+            const response = await api.post<Message>(`/email/draft/${draftId}/send`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    }
 
 
 }

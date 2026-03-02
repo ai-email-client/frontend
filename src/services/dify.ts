@@ -16,6 +16,12 @@ const difyService = {
     ): Promise<DifySummary> {
         const response = await difyAPI.getSummary(req)
         return response
+    },
+    async summaryBatch(
+        req: string[]
+    ): Promise<void> {
+        const response = await difyAPI.summaryBatch(req)
+        return response
     }
 }
 

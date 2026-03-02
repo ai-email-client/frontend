@@ -1,123 +1,222 @@
 <script setup lang="ts">
 import {
     ref,
-    onMounted
+    onMounted,
+    computed
 } from 'vue'
 
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 
 import {
-    EmailDetailResponse,
-    EmailShortResponse,
+  MessageMetaDataResponse
 } from '../interface/response'
 
 import emailService from '../services/email'
+import { useUiStore } from '../stores/uiStore'
+import { Message } from '../interface/email'
 
-const props = defineProps<{
-    darkMode: boolean
-}>()
+const props = defineProps({
+  darkMode: {
+    type: Boolean,
+    default: false
+  },
+  listWidth: {
+    type: Number,
+    default: 450
+  }
+})
 
-const loading = ref(false)
+const emit = defineEmits(['update:listWidth'])
+const uiStore = useUiStore()
 
-const labels = ["TRASH"]
-const limit = 5
+// ── State ──
+const containerRef = ref<HTMLElement | null>(null)
+const emailList = ref<MessageMetaDataResponse[]>([])
+const selectedEmail = ref<Message | null>(null)
 
-const emails = ref<EmailShortResponse[]>([])
-const selectedEmail = ref<EmailDetailResponse | null>(null)
-const isLoadingEmail = ref(false)
 
-const pageToken = ref<string | null>(null)
+// ── Layout Control ──
+const MIN_PX  = 80
+const MAX_PX  = 800
+const SNAP_PX = 140
 
-const stackToken = ref<string[]>([''])
-const currentPage = ref(0)
+const currentWidth = computed({
+  get: () => props.listWidth,
+  set: (val) => emit('update:listWidth', val)
+})
 
-const totalMessage = ref(1)
+const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
+const showViewer  = computed(() => selectedEmail.value !== null)
 
-const fetchEmails = async () => {
-  loading.value = true
+// Params
+const labels            = ['TRASH']
+const limit             = 20
+const query             = ''
+const includeSpamTrash  = false
 
-  const response = await emailService.fetchEmails(labels, limit, null, null)
-  emails.value = response.messages
+const nextPageToken   = ref<string | null>(null)
+const stackToken      = ref<string[]>([""])
+const currentPage     = ref(0)
+const totalMessage    = ref(1)
 
-  pageToken.value = response.page_token
-  stackToken.value.push(response.page_token)
+const fetchEmails = async (
+  labelIds: string[],
+  maxResults: number,
+  pageToken: string,
+  query: string,
+  includeSpamTrash: boolean
+) => {
+  try {
+    uiStore.setLoading(true)
+    selectedEmail.value = null
+    getTotalMessage()
+    const response = await emailService.fetchEmails(
+      labelIds, maxResults, pageToken, query, includeSpamTrash
+    )
+    nextPageToken.value = response.nextPageToken
+    if (!stackToken.value.includes(response.nextPageToken)) {
+      stackToken.value.push(response.nextPageToken)
+    }
+    emailList.value = response.messages
+    // const emailIds = response.messages.map(email => email.id)
+    // fetchSummary(emailIds)
 
-  loading.value = false
+  } catch (error) {
+    console.error('Failed to fetch emails', error)
+  } finally {
+    uiStore.setLoading(false)
+  }
 }
 
-const getEmailById = async (msgId: string) => {
-  if (!msgId) {
-    return
-  }
-  isLoadingEmail.value = true
-  const response = await emailService.getMessageByID(msgId)
-  selectedEmail.value = response
-  isLoadingEmail.value = false
+const getEmailDetail = async (id: string) => {
+  const emailDetail = await emailService.getMessageByID(
+    id,
+    {
+      format: 'full'
+    }
+  )
+  return emailDetail
 }
 
 const nextPage = async () => {
-  loading.value = true
-
-  const nextToken = stackToken.value[currentPage.value + 1]
-  const response = await emailService.fetchEmails(labels, limit, nextToken, null, true)
-
-  emails.value = response.messages
-
-  if (response.page_token && !stackToken.value.includes(response.page_token)) {
-    stackToken.value.push(response.page_token)
-  }
+  if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
-
-
-
-  loading.value = false
+  emailList.value = []
+  await fetchEmails(
+      labels,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash
+  )
 }
 
 const prevPage = async () => {
-  loading.value = true
-
-  const prevToken = stackToken.value[currentPage.value - 1]
-  const response = await emailService.fetchEmails(labels, limit, prevToken, null, true)
-
-  emails.value = response.messages
-
+  if (currentPage.value === 0) return
   currentPage.value--
-  loading.value = false
+  emailList.value = []
+  await fetchEmails(
+      labels,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash
+  )
 }
 
 const getTotalMessage = async () => {
-  loading.value = true
   const response = await emailService.getLabelById(labels[0])
-  if (response.messagesTotal) {
-    totalMessage.value = response.messagesTotal
-  }
-  loading.value = false
+  if (response.messagesTotal) totalMessage.value = response.messagesTotal
 }
 
+const handleDrag = (clientX: number) => {
+  if (!containerRef.value) return
+  const { left, width } = containerRef.value.getBoundingClientRect()
+  const raw = clientX - left
+  const newWidth = raw < SNAP_PX ? MIN_PX : Math.min(Math.max(raw, MIN_PX), Math.min(MAX_PX, width * 0.75))
+  currentWidth.value = newWidth
+}
+
+const handleSelectEmail = async (email: Message) => {
+  try {
+    uiStore.setLoading(true)
+    const _email = await getEmailDetail(email.id)
+    selectedEmail.value = _email
+  } catch (error) {
+    console.error('Failed to fetch email', error)
+  } finally {
+    uiStore.setLoading(false)
+  }
+}
+
+const handleCollapse = () => { currentWidth.value = MIN_PX }
+const handleExpand   = () => { currentWidth.value = 450 }
+
 onMounted(() => {
-    if (localStorage.getItem('jwt_token')) {
-        fetchEmails()
-        if (emails.value.length > 0) {
-            getEmailById(emails.value[0].msg_id)
-        }
-    }
-    getTotalMessage()
+  if (localStorage.getItem('jwt_token')) {
+    fetchEmails(
+      labels,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash
+    )
+  }
 })
 
 </script>
 
 <template>
-    <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <div class="flex flex-1 overflow-hidden relative">
-            <EmailList :emails="emails" :selectedEmail="selectedEmail" :darkMode="darkMode" :loading="loading"
-                @select="(msgId: string) => getEmailById(msgId)" @refresh="fetchEmails" @prevPage="prevPage"
-                @nextPage="nextPage" :currentPage="currentPage + 1" :totalMessage="totalMessage" :limit="limit" />
-
-            <div class="flex-1 flex flex-col h-full overflow-hidden bg-white/50 backdrop-blur-sm transition-colors duration-300 relative"
-                :class="darkMode ? 'bg-gray-900/50' : 'bg-white/50'">
-                <EmailDetail :email="selectedEmail" :loading="isLoadingEmail" :darkMode="darkMode" />
-            </div>
-        </div>
+  <div
+    ref="containerRef"
+    class="flex-1 flex overflow-hidden"
+  >
+    <div
+      :style="{ width: `${currentWidth}px`, minWidth: `${MIN_PX}px`, flexShrink: 0 }"
+      class="flex-col overflow-hidden transition-none"
+      :class="showViewer ? 'hidden md:flex' : 'flex'"
+    >
+      <EmailList
+        :emails="emailList"
+        :selectedEmail="selectedEmail"
+        :loading="uiStore.isLoading"
+        :current-page="currentPage + 1"
+        :total-message="totalMessage"
+        :limit="limit"
+        :dark-mode="darkMode"
+        :collapsed="collapsed"
+        @select="handleSelectEmail"
+        @refresh="() => fetchEmails(
+          labels,
+          limit,
+          stackToken[currentPage],
+          query,
+          includeSpamTrash
+        )"
+        @prevPage="prevPage"
+        @nextPage="nextPage"
+      />
     </div>
+
+    <div class="hidden md:block">
+      <Divider
+        :dark-mode="darkMode"
+        @drag="handleDrag"
+        @collapse="handleCollapse"
+        @expand="handleExpand"
+      />
+    </div>
+
+    <div
+      class="flex-col flex-1 min-w-0"
+      :class="showViewer ? 'flex' : 'hidden md:flex'"
+    >
+      <EmailDetail
+        :email="selectedEmail"
+        :loading="uiStore.isLoading"
+        :dark-mode="darkMode"
+      />
+    </div>
+  </div>
 </template>

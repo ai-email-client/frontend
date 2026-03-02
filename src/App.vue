@@ -19,11 +19,13 @@ import AppSidebar from './components/AppSidebar.vue'
 import { UserProfile } from './interface/user'
 import { useLabelStore } from './stores/categoryStore'
 import { useUiStore } from './stores/uiStore'
+import { useComposerStore } from './stores/composerStore'
 
 const route = useRoute()
 const router = useRouter()
 const uiStore = useUiStore()
 const labelStore = useLabelStore()
+const composerStore = useComposerStore()
 
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
@@ -86,14 +88,12 @@ onMounted(async () => {
   }
   
   await router.isReady()
-  await handleAuthCheck()
   await labelStore.getLabels()
 })
 
 watch(
   () => route.name,
   async () => {
-    await router.isReady()
     await handleAuthCheck()
   }
 )
@@ -155,7 +155,8 @@ watch(
             </span>
           </div>
         </header>
-
+        <div class="fixed w-[50%] bottom-0 right-10 z-50"> <EmailComposer />
+</div>
         <router-view
           v-model:darkMode="darkMode"
           v-model:listWidth="listWidth"

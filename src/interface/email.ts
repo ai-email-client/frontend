@@ -60,3 +60,7 @@ export interface Sender {
   type?: string | null;
 }
 
+export interface Draft{
+  id: string;
+  message: Message;
+}
