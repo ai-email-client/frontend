@@ -1,32 +1,22 @@
 <script setup lang="ts">
 import {
-  ref,
-  onMounted,
-  computed
+    ref,
+    onMounted,
+    computed
 } from 'vue'
 
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
-import Divider from '../components/Divider.vue'
-import EmailComposer from '../components/EmailComposer.vue'
-import type { UserProfile } from '../interface/user'
 
 import {
   MessageMetaDataResponse
 } from '../interface/response'
 
 import emailService from '../services/email'
-import difyService from '../services/dify'
-import { DifySummary } from '../interface/dify'
-import { Message } from '../interface/email'
 import { useUiStore } from '../stores/uiStore'
-import { useComposerStore } from '../stores/composerStore'
+import { Message } from '../interface/email'
 
 const props = defineProps({
-  user: {
-    type: Object as () => UserProfile,
-    default: null
-  },
   darkMode: {
     type: Boolean,
     default: false
@@ -39,14 +29,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:listWidth'])
 const uiStore = useUiStore()
-const composerStore = useComposerStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
 const emailList = ref<MessageMetaDataResponse[]>([])
 const selectedEmail = ref<Message | null>(null)
-// const isLoadingEmail = ref(false)
-const summary = ref<DifySummary | null>(null)
+
 
 // ── Layout Control ──
 const MIN_PX  = 80
@@ -62,7 +50,7 @@ const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
 
 // Params
-const labels            = ['INBOX']
+const labels            = ['TRASH']
 const limit             = 20
 const query             = ''
 const includeSpamTrash  = false
@@ -99,11 +87,6 @@ const fetchEmails = async (
   } finally {
     uiStore.setLoading(false)
   }
-}
-
-const fetchSummary = async (emailIds: string[]) => {
-  console.log(emailIds)
-  await difyService.summaryBatch(emailIds)
 }
 
 const getEmailDetail = async (id: string) => {
@@ -145,18 +128,6 @@ const prevPage = async () => {
 const getTotalMessage = async () => {
   const response = await emailService.getLabelById(labels[0])
   if (response.messagesTotal) totalMessage.value = response.messagesTotal
-}
-
-const handleOpenReplyComposer = (email: Message) => {
-  composerStore.openComposer('reply', email)
-}
-
-const handleOpenForwardComposer = (email: Message) => {
-  composerStore.openComposer('forward', email)
-}
-
-const handleCompose = () => {
-  composerStore.openComposer('new')
 }
 
 const handleDrag = (clientX: number) => {
@@ -225,8 +196,6 @@ onMounted(() => {
         )"
         @prevPage="prevPage"
         @nextPage="nextPage"
-        @draft-email="handleCompose"
-
       />
     </div>
 
@@ -245,15 +214,9 @@ onMounted(() => {
     >
       <EmailDetail
         :email="selectedEmail"
-        :summary="summary"
         :loading="uiStore.isLoading"
         :dark-mode="darkMode"
-        @reply-email="handleOpenReplyComposer"
-        @forward-email="handleOpenForwardComposer"
       />
-      <div class="fixed w-[50%] bottom-0 right-10 z-50">
-        <EmailComposer />
-      </div>
     </div>
   </div>
 </template>

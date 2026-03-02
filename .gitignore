@@ -29,6 +29,7 @@ release/
 out/
 
 .env
+.env.production
 .env.local
 .env.*.local
 
