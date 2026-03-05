@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  sanitizeHtml,
   formatSize,
   senderFormat,
   getLabel,
@@ -26,7 +25,8 @@ import EmailShadow from './EmailShadow.vue'
 import { useLabelStore } from '../stores/categoryStore'
 import Summary from './Summary.vue';
 import { DifySummary } from '../interface/dify';
-import { Message } from '../interface/email';
+import { Attachment, Message } from '../interface/email';
+import emailService from '../services/email';
 
 const props = defineProps<{
   email: Message | null,
@@ -40,6 +40,10 @@ const labelStore = useLabelStore()
 
 const hasHtml = computed(() => !!props.email?.text_html && props.email.text_html.trim().length > 0)
 const hasText = computed(() => !!props.email?.text_plain && props.email.text_plain.trim().length > 0)
+const attachments = ref<Attachment[]>([])
+
+const isProcessing = ref(false)
+const isLoading = computed(() => props.loading || isProcessing.value || !props.email)
 
 const avatarHue = computed(() => {
   if (!props.email) return 0
@@ -49,8 +53,43 @@ const avatarHue = computed(() => {
   return Math.abs(hash) % 360
 })
 
+const loadAttachments = async () => {
+  if (!props.email?.attachments || props.email.attachments.length === 0) {
+    attachments.value = []
+    return attachments.value
+  }
+
+  isProcessing.value = true 
+  try {
+    const results = await Promise.all(props.email.attachments.map(async (att) => {
+      if (att.attachmentId && !att.data) {
+        try {
+          const res = await emailService.getAttachment(props.email!.id, att.attachmentId)
+          return { ...att, data: res.data }
+        } catch (e) { return att }
+      }
+      return att
+    }))
+    attachments.value = results
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+const downloadAttachment = (file: Attachment) => {
+  if (!file.data) return
+  
+  const standardBase64 = file.data.replace(/-/g, '+').replace(/_/g, '/')
+  
+  const link = document.createElement('a')
+  link.href = `data:${file.mimeType};base64,${standardBase64}`
+  link.download = file.filename
+  link.click()
+}
+
 watch(() => props.email, (newEmail) => {
   if (!newEmail) return
+  loadAttachments()
   const _hasHtml = !!newEmail.text_html && newEmail.text_html.trim().length > 0
   const _hasText = !!newEmail.text_plain && newEmail.text_plain.trim().length > 0
   showHtml.value = _hasHtml ? true : _hasText ? false : true
@@ -118,7 +157,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
     </div>
 
     <div
-      v-if="loading"
+      v-if="isLoading"
       class="flex-1 flex flex-col items-center justify-center gap-4"
       :class="darkMode ? 'text-gray-600' : 'text-gray-400'"
     >
@@ -192,7 +231,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
 
           <div
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full shrink-0 whitespace-nowrap"
-            :class="darkMode ? 'bg-gray-700/60 text-gray-400' : 'bg-gray-100 text-gray-500'"
+            :class="darkMode ? 'bg-gray-700/60 text-white' : 'bg-gray-100 text-black'"
           >
             <Clock :size="12" />
             {{ formatDateTime(getHeaderValue(email.payload.headers, 'Date')) }}
@@ -204,7 +243,11 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           :class="darkMode ? 'border-gray-700/40' : 'border-gray-100 shadow-sm'"
         >
           <div v-if="showHtml" class="bg-white">
-            <EmailShadow :content="sanitizeHtml(props.email?.text_html)" />
+            <!-- {{ sanitizeHtml(props.email?.text_html)}} -->
+            <EmailShadow 
+              :content="props.email?.text_html" 
+              :attachments="attachments" 
+            />
           </div>
 
           <div
@@ -216,7 +259,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           </div>
         </div>
 
-        <!-- <div
+        <div
           v-if="email.attachments && email.attachments.length > 0"
           class="pt-2"
         >
@@ -225,13 +268,14 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
           >
             <Paperclip :size="13" />
-            Attachments ({{ email.attachments.length }})
+            Attachments ({{ attachments.length }})
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div
-              v-for="(file, index) in email.attachments"
+              v-for="(file, index) in attachments"
               :key="index"
+              @click="downloadAttachment(file)"
               class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all group"
               :class="darkMode
                 ? 'bg-gray-800/60 border-gray-700/50 hover:border-blue-500/40 hover:bg-gray-800'
@@ -266,7 +310,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
               </button>
             </div>
           </div>
-        </div> -->
+        </div>
 
         <div
           class="flex gap-3 pt-4 pb-10 border-t"

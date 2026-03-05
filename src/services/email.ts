@@ -1,5 +1,6 @@
 import type {
     Attachment,
+    AttachmentData,
     Draft,
     Message,
 } from '../interface/email'
@@ -183,6 +184,18 @@ const emailService = {
     ): Promise<Message> => {
         try {
             const data = await emailAPI.send_draft(draftId)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    getAttachment: async (
+        msgId: string,
+        attachmentId: string
+    ): Promise<AttachmentData> => {
+        try {
+            const data = await emailAPI.get_attachment(msgId, attachmentId)
             return data
         } catch (err) {
             console.error('Fetch error:', err)

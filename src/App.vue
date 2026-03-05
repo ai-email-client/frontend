@@ -97,6 +97,14 @@ watch(
     await handleAuthCheck()
   }
 )
+
+watch(() => route.params.code, () => {
+  if (route.params.code === '401') {
+    localStorage.removeItem('jwt_token')
+    router.push('/login')
+  }
+})
+
 </script>
 
 <template>

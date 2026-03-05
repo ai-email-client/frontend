@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify'
-import { Header } from './interface/email'
+import { Attachment, Header } from './interface/email'
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
     if ('target' in node) {
@@ -12,8 +12,9 @@ export function sanitizeHtml(content: string | null | undefined): string {
     if (!content) return ''
 
     return DOMPurify.sanitize(content, {
-        ADD_ATTR: ['target', 'id', 'class', 'style'],
+        ADD_ATTR: ['target', 'id', 'class', 'style', 'src', 'alt'],
         ADD_TAGS: ['style', 'center'],
+        ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         WHOLE_DOCUMENT: true,
         FORCE_BODY: true,
     })
@@ -115,4 +116,36 @@ export const getHeaderValue = (headers: Header[], headerName: string) => {
 
 export const parseInternalDate = () => {
 
+}
+
+export function resolveCidImages(html: string, attachments: Attachment[]): string {
+    if (!html) return '';
+    let resultHtml = html;
+
+    const cidRegex = /src=["']cid:([^"']+)["']/gi;
+
+    resultHtml = resultHtml.replace(cidRegex, (match, cidFromHtml) => {
+        const targetCid = cidFromHtml.trim();
+
+        const attachment = attachments?.find(att => {
+            const cidHeader = att.headers?.find((h: Header) => h.name.toLowerCase() === 'content-id');
+            const cleanCid = cidHeader ? cidHeader.value.replace(/[<>]/g, '').trim() : null;
+            
+            return cleanCid === targetCid;
+        });
+
+        if (attachment && attachment.data) {
+            let base64 = attachment.data.replace(/-/g, '+').replace(/_/g, '/');
+            
+            while (base64.length % 4 !== 0) {
+                base64 += '=';
+            }
+
+            return `src="data:${attachment.mimeType};base64,${base64}"`;
+        }
+
+        return `src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"`;
+    });
+
+    return resultHtml;
 }

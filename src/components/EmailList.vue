@@ -7,19 +7,19 @@ import {
   ChevronRight,
   Tag,
   Clock,
-  Mail
+  Mail,
+  Paperclip
 } from 'lucide-vue-next'
-import { 
-  MessageMetaDataResponse
-} from '../interface/response';
+
 import { useLabelStore } from '../stores/categoryStore';
-import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue } from '../utils';
-import { Message } from '../interface/email';
+import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize } from '../utils';
+import { Attachment, Message } from '../interface/email';
+import emailService from '../services/email';
 
 const labelStore = useLabelStore();
 
 defineProps<{
-  emails: MessageMetaDataResponse[],
+  emails: Message[],
   selectedEmail: Message|null ,
   darkMode: boolean,
   loading: boolean
@@ -36,6 +36,19 @@ const emit = defineEmits([
   'nextPage', 
   'draftEmail',
 ])
+
+const downloadAttachment = async (email: Message, file: Attachment) => {
+  const response = await emailService.getAttachment(email.id,file.attachmentId!)
+  if (!response.data) return
+  
+  const standardBase64 = response.data.replace(/-/g, '+').replace(/_/g, '/')
+  
+  const link = document.createElement('a')
+  link.href = `data:${file.mimeType};base64,${standardBase64}`
+  link.download = file.filename
+  link.click()
+}
+
 </script>
 <template>
   <div
@@ -248,6 +261,32 @@ const emit = defineEmits([
                 :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
               >
                 {{ email.snippet }}
+              </div>
+              <div
+                v-if="email.attachments && email.attachments.length > 0"
+                class="pt-2"
+              >
+                <div
+                  v-for="attachment in email.attachments"
+                  :key="attachment.filename"
+                  @click.stop="downloadAttachment(email, attachment)"
+                  class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-blue-400 transition-colors"
+                  :class="darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
+                >
+                  <div class="p-1.5 rounded-md" :class="darkMode ? 'bg-blue-500/10' : 'bg-blue-100'">
+                    <Paperclip :size="14" :class="darkMode ? 'text-blue-400' : 'text-blue-600'" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs font-semibold truncate" :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
+                        {{ attachment.filename }}
+                      </span>
+                      <span class="text-xs shrink-0" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+                        {{ formatSize(attachment.size) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

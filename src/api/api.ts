@@ -1,9 +1,8 @@
 import axios from 'axios'
-import {
-    useRouter
-} from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
@@ -28,6 +27,7 @@ api.interceptors.response.use(
         return response
     },
     (error) => {
+
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('jwt_token')
             if (router.currentRoute.value.name !== 'Login') {

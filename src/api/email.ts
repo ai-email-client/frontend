@@ -10,6 +10,7 @@ import {
 } from '../interface/response'
 import {
     Attachment,
+    AttachmentData,
     Draft,
     Message
 
@@ -202,6 +203,14 @@ export default {
     async send_draft(draftId: string) {
         try {
             const response = await api.post<Message>(`/email/draft/${draftId}/send`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async get_attachment(msgId: string, attachmentId: string) {
+        try {
+            const response = await api.get<AttachmentData>(`/email/message/${msgId}/attachment/${attachmentId}`)
             return response.data
         } catch (error) {
             throw error

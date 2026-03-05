@@ -1,3 +1,8 @@
+export interface Header {
+  name: string;
+  value: string;
+}
+
 export interface Payload{
   mimeType: string;
   headers: Header[];
@@ -8,6 +13,13 @@ export interface Attachment {
   mimeType: string;
   size: number;
   attachmentId?: string | null;
+  headers: Header[];
+  data: string;
+}
+
+export interface AttachmentData{
+  size: number;
+  data: string;
 }
 
 export interface ClassificationLabelFieldValue {
@@ -18,11 +30,6 @@ export interface ClassificationLabelFieldValue {
 export interface ClassificationLabelValue {
   labelId: string;
   fields: ClassificationLabelFieldValue[];
-}
-
-export interface Header {
-  name: string;
-  value: string;
 }
 
 export interface MessagePartBody {
@@ -48,6 +55,7 @@ export interface Message {
   historyId: string;
   internalDate: string;
   payload: MessagePart;
+  attachments: Attachment[];
   text_plain: string;
   text_html: string;
   sizeEstimate: number;
