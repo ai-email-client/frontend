@@ -12,6 +12,7 @@ import {
     CreateLabelResponse,
     CategoryListResponse,
     FetchMessagesResponse,
+    DraftsResponse,
 } from '../interface/response'
 
 import emailAPI from '../api/email'
@@ -30,6 +31,23 @@ const emailService = {
         const data = await emailAPI.fetch_emails(
             {   maxResults: maxResults,
                 labelIds: labelIds,
+                pageToken: pageToken,
+                q: query,
+                includeSpamTrash: includeSpamTrash
+            }
+        )
+
+        return data
+    },
+    getDrafts: async (
+        maxResults: number,
+        pageToken: string | null,
+        query: string | null,
+        includeSpamTrash: boolean,
+    ): Promise<DraftsResponse> => {
+
+        const data = await emailAPI.get_drafts(
+            {   maxResults: maxResults,
                 pageToken: pageToken,
                 q: query,
                 includeSpamTrash: includeSpamTrash
@@ -173,6 +191,18 @@ const emailService = {
     ): Promise<Draft> => {
         try {
             const data = await emailAPI.update_draft(draftId, body)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    uploadDraft: async (
+        draftId: string,
+        body: DraftCreateRequest
+    ): Promise<Draft> => {
+        try {
+            const data = await emailAPI.upload_draft(draftId, body)
             return data
         } catch (err) {
             console.error('Fetch error:', err)

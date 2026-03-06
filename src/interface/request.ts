@@ -1,5 +1,5 @@
 import { Category } from './category';
-import { Message } from './email';
+import { Attachment, Message } from './email';
 
 export interface UserRequest {
   email_address: string;
@@ -62,7 +62,8 @@ export interface MessageModifyLabelRequest {
 }
 
 export interface DraftCreateRequest {
-  to: string;
-  subject: string;
-  body: string;
+  to?: string;
+  subject?: string;
+  message?: string;
+  attachments?: Attachment[]
 }

@@ -10,7 +10,8 @@ import {
   Circle,
   Folder,
   AlertOctagon,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-vue-next'
 
 import { ref } from 'vue'
@@ -73,6 +74,12 @@ const menuItems = ref<CategoryMenuItem[]>([
       label: formatLabel(spamType),
       to: `/spam/${spamType.toLowerCase()}`
     }))
+  },
+  {
+    icon: FileText,
+    label: 'Draft',
+    to: '/draft',
+    badge: 0
   },
   {
     icon: Send,

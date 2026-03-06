@@ -1,5 +1,5 @@
 import { DifySummary } from './dify';
-import { Attachment, Message, Payload, Sender } from './email';
+import { Attachment, Draft, Message, Payload, Sender } from './email';
 import { Category } from './category';
 
 export interface AttachmentResponse {
@@ -140,4 +140,10 @@ export interface CategoryListResponse {
 }
 export interface LoginResponse {
   url: string
+}
+
+export interface DraftsResponse {
+  drafts: Draft[];
+  nextPageToken: string;
+  resultSizeEstimate: number;
 }

@@ -8,6 +8,8 @@ import SentPage from '../views/SentPage.vue'
 import TrashPage from '../views/TrashPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
 import CallbackPage from '../views/Callback.vue'
+import DraftPage from '../views/DraftPage.vue'
+
 
 const routes = [
     {
@@ -24,6 +26,11 @@ const routes = [
         path: '/inbox',
         name: 'Inbox',
         component: InboxPage
+    },
+    {
+        path: '/draft',
+        name: 'Draft',
+        component: DraftPage
     },
     {
         path: '/sent',

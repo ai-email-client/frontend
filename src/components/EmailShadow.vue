@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { Attachment } from '../interface/email';
 import { resolveCidImages, sanitizeHtml } from '../utils';
 
@@ -9,26 +9,12 @@ const props = defineProps<{
 }>()
 
 const host = ref<HTMLElement | null>(null)
-// const hasImage = computed(() => 
-//   props.attachments?.some(att => att.mimeType?.startsWith('image/'))
-// )
 
 const updateShadowDom = () => {
   if (!host.value || !props.content) return
 
   const withImages = resolveCidImages(props.content, props.attachments)
   const cleanHtml = sanitizeHtml(withImages)
-
-  // const imgStyle = hasImage.value 
-  //   ? `img { 
-  //       max-width: 100% !important; 
-  //       height: auto !important; 
-  //       display: block;
-  //       margin: 1.5rem auto; /* จัดกึ่งกลางสวยๆ */
-  //       box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* เพิ่มเงาให้รูปดูเด่นขึ้น */
-  //       border-radius: 8px;
-  //     }`
-  //   : `img { max-width: 100%; height: auto; }`;
 
   const shadow = host.value.shadowRoot || host.value.attachShadow({ mode: 'open' })
   shadow.innerHTML = `

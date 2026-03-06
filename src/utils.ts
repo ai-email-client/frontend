@@ -120,6 +120,8 @@ export const parseInternalDate = () => {
 
 export function resolveCidImages(html: string, attachments: Attachment[]): string {
     if (!html) return '';
+    if (!attachments || attachments.length === 0) return html;
+
     let resultHtml = html;
 
     const cidRegex = /src=["']cid:([^"']+)["']/gi;
@@ -127,25 +129,62 @@ export function resolveCidImages(html: string, attachments: Attachment[]): strin
     resultHtml = resultHtml.replace(cidRegex, (match, cidFromHtml) => {
         const targetCid = cidFromHtml.trim();
 
-        const attachment = attachments?.find(att => {
-            const cidHeader = att.headers?.find((h: Header) => h.name.toLowerCase() === 'content-id');
-            const cleanCid = cidHeader ? cidHeader.value.replace(/[<>]/g, '').trim() : null;
+        const attachment = attachments.find(att => {
+            const cidHeader = att.headers?.find(
+                (h: any) => h.name.toLowerCase() === 'content-id'
+            );
             
-            return cleanCid === targetCid;
+            if (!cidHeader) return false;
+
+            const cleanHeaderCid = cidHeader.value.replace(/[<>]/g, '').trim();
+
+            const isMatch = cleanHeaderCid.toLowerCase() === targetCid.toLowerCase();
+            
+            return isMatch;
         });
 
         if (attachment && attachment.data) {
             let base64 = attachment.data.replace(/-/g, '+').replace(/_/g, '/');
             
-            while (base64.length % 4 !== 0) {
-                base64 += '=';
+            base64 = base64.replace(/\s/g, '');
+
+            const pad = base64.length % 4;
+            if (pad > 0) {
+                base64 += '='.repeat(4 - pad);
             }
 
             return `src="data:${attachment.mimeType};base64,${base64}"`;
         }
 
-        return `src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"`;
+        return match; 
     });
 
     return resultHtml;
+}
+
+export const getFileData = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = () => {
+      const fullResult = reader.result as string; 
+      const dataOnly = fullResult.split(',')[1]; 
+      
+      resolve(dataOnly);
+    };
+  });
+};
+
+export const downloadAttachment = (file: Attachment) => {
+  
+  if (!file.data) return
+  
+  const standardBase64 = file.data.replace(/-/g, '+').replace(/_/g, '/')
+  
+  const link = document.createElement('a')
+  link.href = `data:${file.mimeType};base64,${standardBase64}`
+  link.download = file.filename
+  link.click()
 }

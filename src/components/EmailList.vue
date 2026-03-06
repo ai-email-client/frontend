@@ -12,9 +12,8 @@ import {
 } from 'lucide-vue-next'
 
 import { useLabelStore } from '../stores/categoryStore';
-import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize } from '../utils';
-import { Attachment, Message } from '../interface/email';
-import emailService from '../services/email';
+import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize, downloadAttachment } from '../utils';
+import { Message } from '../interface/email';
 
 const labelStore = useLabelStore();
 
@@ -36,18 +35,6 @@ const emit = defineEmits([
   'nextPage', 
   'draftEmail',
 ])
-
-const downloadAttachment = async (email: Message, file: Attachment) => {
-  const response = await emailService.getAttachment(email.id,file.attachmentId!)
-  if (!response.data) return
-  
-  const standardBase64 = response.data.replace(/-/g, '+').replace(/_/g, '/')
-  
-  const link = document.createElement('a')
-  link.href = `data:${file.mimeType};base64,${standardBase64}`
-  link.download = file.filename
-  link.click()
-}
 
 </script>
 <template>
@@ -269,7 +256,7 @@ const downloadAttachment = async (email: Message, file: Attachment) => {
                 <div
                   v-for="attachment in email.attachments"
                   :key="attachment.filename"
-                  @click.stop="downloadAttachment(email, attachment)"
+                  @click.stop="downloadAttachment(attachment)"
                   class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-blue-400 transition-colors"
                   :class="darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
                 >

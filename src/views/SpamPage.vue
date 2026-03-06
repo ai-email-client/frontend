@@ -13,9 +13,7 @@ import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 import Divider from '../components/Divider.vue'
 
-import {
-  MessageMetaDataResponse
-} from '../interface/response'
+
 
 import { useLabelStore } from '../stores/categoryStore'
 import emailService from '../services/email'
@@ -36,7 +34,7 @@ const emit = defineEmits(['update:listWidth'])
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
-const emailList = ref<MessageMetaDataResponse[]>([])
+const emailList = ref<Message[]>([])
 const selectedEmail = ref<Message | null>(null)
 
 // ── Layout Control ──
@@ -51,13 +49,13 @@ const currentWidth = computed({
 
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
-// const currentLabel = computed((): string[] => {
-//   const currentCategoryName = route.params.category;
+const currentLabel = computed((): string[] => {
+  const currentCategoryName = route.params.category;
 
-//   const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
+  const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
   
-//   return labelId ? [labelId] : [];
-// })
+  return labelId ? [labelId] : [];
+})
 
 // Params
 const labels            = ["SPAM"]
@@ -149,12 +147,7 @@ const handleDrag = (clientX: number) => {
 const handleSelectEmail = async (email: Message) => {
   try {
     uiStore.setLoading(true)
-    const _email = await emailService.getMessageByID(email.id,
-      {
-        format: 'full'
-      }
-    )
-    selectedEmail.value = _email
+    selectedEmail.value = email
   } catch (error) {
     console.error('Failed to fetch email', error)
   } finally {

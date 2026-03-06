@@ -8,9 +8,7 @@ import {
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 
-import {
-  MessageMetaDataResponse
-} from '../interface/response'
+
 
 import emailService from '../services/email'
 import { useUiStore } from '../stores/uiStore'
@@ -32,7 +30,7 @@ const uiStore = useUiStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
-const emailList = ref<MessageMetaDataResponse[]>([])
+const emailList = ref<Message[]>([])
 const selectedEmail = ref<Message | null>(null)
 
 
@@ -89,16 +87,6 @@ const fetchEmails = async (
   }
 }
 
-const getEmailDetail = async (id: string) => {
-  const emailDetail = await emailService.getMessageByID(
-    id,
-    {
-      format: 'full'
-    }
-  )
-  return emailDetail
-}
-
 const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
@@ -141,8 +129,7 @@ const handleDrag = (clientX: number) => {
 const handleSelectEmail = async (email: Message) => {
   try {
     uiStore.setLoading(true)
-    const _email = await getEmailDetail(email.id)
-    selectedEmail.value = _email
+    selectedEmail.value = email
   } catch (error) {
     console.error('Failed to fetch email', error)
   } finally {

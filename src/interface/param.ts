@@ -7,6 +7,12 @@ export interface MessagesParam {
   labelIds?: string[];
   includeSpamTrash?: boolean;
 }
+export interface DraftsParam {
+  maxResults?: number;
+  pageToken?: string | null;
+  q?: string | null;
+  includeSpamTrash?: boolean;
+}
 
 export interface MessageParam {
   format?: MessageFormat | string; 

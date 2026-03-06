@@ -5,7 +5,8 @@ import {
   getLabel,
   formatDateTime,
   getFirstCharacter,
-  getHeaderValue
+  getHeaderValue,
+  downloadAttachment
 } from '../utils'
 
 import {
@@ -23,8 +24,8 @@ import {
 
 import EmailShadow from './EmailShadow.vue'
 import { useLabelStore } from '../stores/categoryStore'
-import Summary from './Summary.vue';
-import { DifySummary } from '../interface/dify';
+// import Summary from './Summary.vue';
+// import { DifySummary } from '../interface/dify';
 import { Attachment, Message } from '../interface/email';
 import emailService from '../services/email';
 
@@ -43,7 +44,7 @@ const hasText = computed(() => !!props.email?.text_plain && props.email.text_pla
 const attachments = ref<Attachment[]>([])
 
 const isProcessing = ref(false)
-const isLoading = computed(() => props.loading || isProcessing.value || !props.email)
+const isLoading = computed(() => props.loading || isProcessing.value)
 
 const avatarHue = computed(() => {
   if (!props.email) return 0
@@ -74,17 +75,6 @@ const loadAttachments = async () => {
   } finally {
     isProcessing.value = false
   }
-}
-
-const downloadAttachment = (file: Attachment) => {
-  if (!file.data) return
-  
-  const standardBase64 = file.data.replace(/-/g, '+').replace(/_/g, '/')
-  
-  const link = document.createElement('a')
-  link.href = `data:${file.mimeType};base64,${standardBase64}`
-  link.download = file.filename
-  link.click()
 }
 
 watch(() => props.email, (newEmail) => {

@@ -6,6 +6,7 @@ import {
 } from '../interface/request'
 import {
     CategoryListResponse,
+    DraftsResponse,
     FetchMessagesResponse
 } from '../interface/response'
 import {
@@ -18,7 +19,7 @@ import {
 import {
     Category,
 } from '../interface/category'
-import { MessageParam, MessagesParam } from '../interface/param'
+import { DraftsParam, MessageParam, MessagesParam } from '../interface/param'
 
 export default {
     async fetch_emails(
@@ -26,6 +27,25 @@ export default {
     ) {
         try {
             const response = await api.get<FetchMessagesResponse>('/email/messages', 
+                {
+                    params: param,
+                    paramsSerializer: {
+                        indexes: null 
+                    }
+                }
+            )
+            return response.data
+
+        } catch (error) {
+            console.error('Failed to fetch emails:', error)
+            throw error
+        }
+    },
+    async get_drafts(
+        param: DraftsParam
+    ) {
+        try {
+            const response = await api.get<DraftsResponse>('/email/drafts', 
                 {
                     params: param,
                     paramsSerializer: {
@@ -191,10 +211,18 @@ export default {
     },
     async update_draft(draftId: string, body: DraftCreateRequest) {
         try {
+            const response = await api.put<Draft>(`/email/draft/${draftId}`, body)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async upload_draft(draftId: string, body: DraftCreateRequest) {
+        try {
             const payload = {
                 body
             }
-            const response = await api.put<Draft>(`/email/draft/${draftId}`, payload)
+            const response = await api.put<Draft>(`/email/draft/upload/${draftId}`, payload)
             return response.data
         } catch (error) {
             throw error
