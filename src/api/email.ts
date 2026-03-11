@@ -200,10 +200,7 @@ export default {
     },
     async create_draft(body: DraftCreateRequest) {
         try {
-            const payload = {
-                body
-            }
-            const response = await api.post<Draft>('/email/draft/create', payload)
+            const response = await api.post<Draft>('/email/draft/create', body)
             return response.data
         } catch (error) {
             throw error
@@ -223,6 +220,14 @@ export default {
                 body
             }
             const response = await api.put<Draft>(`/email/draft/upload/${draftId}`, payload)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
+    async delete_draft(draftId: string) {
+        try {
+            const response = await api.delete(`/email/draft/${draftId}`)
             return response.data
         } catch (error) {
             throw error

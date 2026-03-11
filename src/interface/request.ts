@@ -63,7 +63,21 @@ export interface MessageModifyLabelRequest {
 
 export interface DraftCreateRequest {
   to?: string;
+  cc?: string;
+  bcc?: string;
   subject?: string;
-  message?: string;
+  content?: string;
+  threadId?: string;
+  in_reply_to?: string;
+  references?: string;
+  message?: Message|null;
   attachments?: Attachment[]
+}
+
+export interface WritterRequest {
+    email_text?: string | "";
+    ai_summary?: string | "";
+    user_draft?: string | "";
+    topic?: string | "";
+    target_person?: string | "";
 }

@@ -47,7 +47,7 @@ export interface MessagePart {
   parts: Record<string, any>[];
 }
 
-export interface Message {
+export interface MessageGmail {
   id: string;
   threadId: string;
   labelIds: string[];
@@ -61,6 +61,25 @@ export interface Message {
   sizeEstimate: number;
   raw: string;
   classificationLabelValues: ClassificationLabelValue[];
+}
+
+export interface Message {
+    id: string;
+    threadId: string;
+    message_id: string;
+    cc: string;
+    bcc: string;
+    in_reply_to: string;
+    references: string;
+    labelIds: string[];
+    date: string;
+    to: string;
+    sender: string;
+    subject: string;
+    snippet: string;
+    text_plain: string;
+    text_html: string;
+    attachments: Attachment[];
 }
 
 export interface Sender {

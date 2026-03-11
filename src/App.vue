@@ -16,24 +16,24 @@ import {
   Sun
 } from 'lucide-vue-next'
 import AppSidebar from './components/AppSidebar.vue'
-import { UserProfile } from './interface/user'
 import { useLabelStore } from './stores/categoryStore'
 import { useUiStore } from './stores/uiStore'
-import { useComposerStore } from './stores/composerStore'
+import userService from './services/user'
+import { UserProfile } from './interface/user'
 
 const route = useRoute()
 const router = useRouter()
 const uiStore = useUiStore()
 const labelStore = useLabelStore()
-const composerStore = useComposerStore()
 
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
-const user = ref<UserProfile | null>(null)
 
 const MIN_PX = 80
 const listWidth = ref(450)
 const collapsed = computed(() => listWidth.value <= MIN_PX + 4)
+
+const userProfile = ref<UserProfile | null>(null)
 
 const showLayout = computed(() => {
   const hiddenLayoutPages = ['Home', 'Login', 'Callback']
@@ -49,6 +49,11 @@ const presetWidths = [
 
 const applyPreset = (preset: { value: number }) => {
   listWidth.value = preset.value
+}
+
+const currentUser = async () => {
+  await handleAuthCheck()
+  userProfile.value = await userService.get_profile()
 }
 
 const handleAuthCheck = async () => {
@@ -74,7 +79,7 @@ const handleAuthCheck = async () => {
 
 const handleLogout = () => {
   localStorage.removeItem('jwt_token')
-  user.value = null
+  userProfile.value = null
   router.replace('/login')
   uiStore.setLoading(false)
 }
@@ -86,8 +91,13 @@ onMounted(async () => {
     await handleAuthCheck()
     router.replace('/inbox') 
   }
+
+  if (route.name === 'Inbox') {
+    await handleAuthCheck()
+  }
   
   await router.isReady()
+  await currentUser()
   await labelStore.getLabels()
 })
 
@@ -114,6 +124,7 @@ watch(() => route.params.code, () => {
   >
       <AppSidebar
         v-if="showLayout"
+        :user-profile="userProfile"
         :collapsed="sidebarCollapsed"
         :dark-mode="darkMode"
         @toggleCollapse="sidebarCollapsed = !sidebarCollapsed"

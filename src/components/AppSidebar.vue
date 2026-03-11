@@ -22,11 +22,13 @@ import { SpamType } from '../interface/spam';
 import { LogOut } from 'lucide-vue-next'
 import { useRouter } from 'vue-router';
 import { useUiStore } from '../stores/uiStore';
+import { UserProfile } from '../interface/user';
 
 const router = useRouter()
 const uiStore = useUiStore()
 
 defineProps<{
+  userProfile: UserProfile | null
   collapsed: boolean,
   darkMode: boolean
 }>()
@@ -185,13 +187,13 @@ const menuItems = ref<CategoryMenuItem[]>([
       <div class="flex items-center gap-3">
         <div
           class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium shadow-lg shrink-0">
-          <!-- {{ user?.emailAddress?.charAt(0).toUpperCase() || 'U' }} -->
+          {{ userProfile?.emailAddress?.charAt(0).toUpperCase() || 'U' }}
         </div>
 
         <div v-if="!collapsed" class="flex-1 min-w-0 flex items-center justify-between group">
           <div class="flex-1 min-w-0 mr-2">
             <p class="text-sm font-medium truncate" :class="darkMode ? 'text-white' : 'text-gray-900'">
-              <!-- {{ user?.emailAddress || 'User' }} -->
+              {{ userProfile?.emailAddress || 'User' }}
             </p>
           </div>
 

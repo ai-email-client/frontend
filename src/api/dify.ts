@@ -1,9 +1,11 @@
 import api from "./api"
 import {
-    DifySummary
+    DifySummary,
+    DifyWritter
 } from "../interface/dify"
 import {
-    DifySummaryRequest
+    DifySummaryRequest,
+    WritterRequest
 } from "../interface/request"
 
 export default {
@@ -22,6 +24,15 @@ export default {
             return response.data
         } catch (error) {
             console.error('Error getting Dify summary batch:', error)
+            throw error
+        }
+    },
+    async writter(req: WritterRequest): Promise<DifyWritter> {
+        try {
+            const response = await api.post<DifyWritter>('/dify/writter', req)
+            return response.data
+        } catch (error) {
+            console.error('Error getting Dify writter:', error)
             throw error
         }
     }

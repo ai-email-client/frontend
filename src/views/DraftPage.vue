@@ -39,7 +39,8 @@ const composerStore = useComposerStore()
 const containerRef = ref<HTMLElement | null>(null)
 const draftList = ref<Draft[]>([])
 const emailList = ref<Message[]>([])
-const selectedEmail = ref<Message | null>(null)
+
+const selectedEmail = computed(() => composerStore.activeComposer?.message || null)
 
 // ── Layout Control ──
 const MIN_PX  = 80
@@ -52,13 +53,15 @@ const currentWidth = computed({
 })
 
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
-const showViewer  = computed(() => selectedEmail.value !== null)
+const showViewer  = computed(() => composerStore.activeComposer !== null)
 
 // Params
 const labels            = ['DRAFT']
 const limit             = 20
 const query             = ''
 const includeSpamTrash  = false
+const format            = 'raw'
+const metadataHeaders   : string[] = []
 
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
@@ -69,24 +72,55 @@ const fetchEmails = async (
   maxResults: number,
   pageToken: string,
   query: string,
-  includeSpamTrash: boolean
+  includeSpamTrash: boolean,
+  format: string,
+  metadataHeaders: string[],
+  isBackground = false 
 ) => {
   try {
-    uiStore.setLoading(true)
-    selectedEmail.value = null
+    if (!isBackground) {
+      uiStore.setLoading(true)
+      resetPage()
+    }
+    
     getTotalMessage()
     const response = await emailService.getDrafts(
-      maxResults, pageToken, query, includeSpamTrash
+      maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
-    nextPageToken.value = response.nextPageToken
-    if (!stackToken.value.includes(response.nextPageToken)) {
+    
+    nextPageToken.value = response.nextPageToken || null
+    if (response.nextPageToken && !stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-    draftList.value = response.drafts
-    emailList.value = response.drafts.map(draft => draft.message)
+
+    if (response.drafts) {
+      draftList.value = response.drafts
+      emailList.value = response.drafts
+        .map(draft => draft.message)
+        .filter((msg): msg is Message => msg !== undefined && msg !== null)
+    } else {
+      draftList.value = []
+      emailList.value = []
+    }
 
   } catch (error) {
     console.error('Failed to fetch emails', error)
+  } finally {
+    if (!isBackground) uiStore.setLoading(false)
+  }
+}
+
+const handleSelectEmail = async (email: Message) => {
+  try {
+    uiStore.setLoading(true)
+
+    const draftObj = draftList.value.find(draft => draft.message?.id === email.id)
+    const draftId = draftObj?.id || null
+
+    composerStore.openComposer('edit', draftId, email)
+
+  } catch (error) {
+    console.error('Failed to open draft', error)
   } finally {
     uiStore.setLoading(false)
   }
@@ -96,31 +130,29 @@ const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
   emailList.value = []
-  await fetchEmails(
-      limit,
-      stackToken.value[currentPage.value],
-      query,
-      includeSpamTrash
-  )
+  await fetchEmails(limit, stackToken.value[currentPage.value], query, includeSpamTrash, format, metadataHeaders)
 }
 
 const prevPage = async () => {
   if (currentPage.value === 0) return
   currentPage.value--
   emailList.value = []
-  await fetchEmails(
-      limit,
-      stackToken.value[currentPage.value],
-      query,
-      includeSpamTrash
-  )
+  await fetchEmails(limit, stackToken.value[currentPage.value], query, includeSpamTrash, format, metadataHeaders)
+}
+
+const resetPage = () => {
+  emailList.value = []
+  draftList.value = []
 }
 
 const getTotalMessage = async () => {
-  const response = await emailService.getLabelById(labels[0])
-  if (response.messagesTotal) totalMessage.value = response.messagesTotal
+  try {
+    const response = await emailService.getLabelById(labels[0])
+    if (response.messagesTotal) totalMessage.value = response.messagesTotal
+  } catch (error) {
+    console.error(error)
+  }
 }
-
 
 const handleCompose = () => {
   composerStore.openComposer('new')
@@ -134,50 +166,22 @@ const handleDrag = (clientX: number) => {
   currentWidth.value = newWidth
 }
 
-const handleSelectEmail = async (email: Message) => {
-  try {
-    uiStore.setLoading(true)
-    selectedEmail.value = email
-    const draftId = draftList.value.find(draft => draft.message.id === email.id)?.id || null
-    console.log(email.attachments)
-    composerStore.openComposer('edit', email, draftId )
-  } catch (error) {
-    console.error('Failed to fetch email', error)
-  } finally {
-    uiStore.setLoading(false)
-  }
-}
-
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 450 }
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
-    fetchEmails(
-
-      limit,
-      stackToken.value[currentPage.value],
-      query,
-      includeSpamTrash
-    )
+    fetchEmails(limit, stackToken.value[currentPage.value], query, includeSpamTrash, format, metadataHeaders)
   }
 })
 
 watch(() => composerStore.lastUpdated, () => {
-  fetchEmails(
-    limit,
-    stackToken.value[currentPage.value],
-    query,
-    includeSpamTrash
-  )
+  fetchEmails(limit, stackToken.value[currentPage.value], query, includeSpamTrash, format, metadataHeaders, true)
 })
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    class="flex-1 flex overflow-hidden"
-  >
+  <div ref="containerRef" class="flex-1 flex overflow-hidden">
     <div
       :style="{ width: `${currentWidth}px`, minWidth: `${MIN_PX}px`, flexShrink: 0 }"
       class="flex-col overflow-hidden transition-none"
@@ -193,16 +197,10 @@ watch(() => composerStore.lastUpdated, () => {
         :dark-mode="darkMode"
         :collapsed="collapsed"
         @select="handleSelectEmail"
-        @refresh="() => fetchEmails(
-          limit,
-          stackToken[currentPage],
-          query,
-          includeSpamTrash
-        )"
+        @refresh="() => fetchEmails(limit, stackToken[currentPage], query, includeSpamTrash, format, metadataHeaders)"
         @prevPage="prevPage"
         @nextPage="nextPage"
         @draft-email="handleCompose"
-
       />
     </div>
 
@@ -216,12 +214,10 @@ watch(() => composerStore.lastUpdated, () => {
     </div>
 
     <div
-      class="flex-col flex-1 min-w-0"
+      class="flex-col flex-1 min-w-0 bg-gray-50 relative"
       :class="showViewer ? 'flex' : 'hidden md:flex'"
     >
-      <div class="fixed w-[50%] bottom-0 right-10 z-50">
-        <EmailComposer />
-      </div>
+      <EmailComposer />
     </div>
   </div>
 </template>

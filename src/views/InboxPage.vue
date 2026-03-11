@@ -64,6 +64,8 @@ const labels            = ['INBOX']
 const limit             = 20
 const query             = ''
 const includeSpamTrash  = false
+const format            = 'full'
+const metadataHeaders   : string[] = []
 
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
@@ -75,19 +77,22 @@ const fetchEmails = async (
   maxResults: number,
   pageToken: string,
   query: string,
-  includeSpamTrash: boolean
+  includeSpamTrash: boolean,
+  format: string,
+  metadataHeaders: string[]
 ) => {
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
     getTotalMessage()
     const response = await emailService.fetchEmails(
-      labelIds, maxResults, pageToken, query, includeSpamTrash
+      labelIds, maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
     nextPageToken.value = response.nextPageToken
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
+    console.log(response.messages)
     emailList.value = response.messages
     // const emailIds = response.messages.map(email => email.id)
     // fetchSummary(emailIds)
@@ -113,7 +118,9 @@ const nextPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash
+      includeSpamTrash,
+      format,
+      metadataHeaders
   )
 }
 
@@ -126,7 +133,9 @@ const prevPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash
+      includeSpamTrash,
+      format,
+      metadataHeaders
   )
 }
 
@@ -136,11 +145,11 @@ const getTotalMessage = async () => {
 }
 
 const handleOpenReplyComposer = () => {
-  composerStore.openComposer('reply', selectedEmail.value)
+  composerStore.openComposer('reply', null, selectedEmail.value)
 }
 
 const handleOpenForwardComposer = () => {
-  composerStore.openComposer('forward', selectedEmail.value)
+  composerStore.openComposer('forward', null, selectedEmail.value)
 }
 
 const handleCompose = () => {
@@ -176,7 +185,9 @@ onMounted(() => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash
+      includeSpamTrash,
+      format,
+      metadataHeaders
     )
   }
 })
@@ -208,7 +219,9 @@ onMounted(() => {
           limit,
           stackToken[currentPage],
           query,
-          includeSpamTrash
+          includeSpamTrash,
+          format,
+          metadataHeaders
         )"
         @prevPage="prevPage"
         @nextPage="nextPage"

@@ -8,11 +8,11 @@ import {
   Tag,
   Clock,
   Mail,
-  Paperclip
+  File
 } from 'lucide-vue-next'
 
 import { useLabelStore } from '../stores/categoryStore';
-import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize, downloadAttachment } from '../utils';
+import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize } from '../utils';
 import { Message } from '../interface/email';
 
 const labelStore = useLabelStore();
@@ -80,7 +80,7 @@ const emit = defineEmits([
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105')
           ]"
         >
-          {{ getFirstCharacter(senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name ?? '') }}
+          {{ getFirstCharacter(senderFormat(email.sender)?.name || '') }}
           <span
             v-if="email.labelIds.includes('UNREAD')"
             class="absolute top-0 right-0 w-2.5 h-2.5 bg-blue-500 rounded-full border-2"
@@ -206,8 +206,7 @@ const emit = defineEmits([
                         ? (email.labelIds.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
                         : (email.labelIds.includes('UNREAD') ? 'text-black' : 'text-gray-500')
                     ]"
-                  >
-                    {{ senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name }}
+                  >{{ senderFormat(email.sender)?.name }}
                   </h3>
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
@@ -229,7 +228,7 @@ const emit = defineEmits([
                     : (email.labelIds.includes('UNREAD') ? 'text-gray-600' : 'text-gray-400')"
                 >
                   <Clock class="w-3 h-3" />
-                  {{ formatTimeAgo(getHeaderValue(email.payload.headers, 'Date')) }}
+                  {{ formatTimeAgo(email.date) }}
                 </div>
               </div>
               <h3
@@ -241,7 +240,7 @@ const emit = defineEmits([
                     : (email.labelIds.includes('UNREAD') ? 'text-black' : 'text-gray-600')
                 ]"
               >
-                {{ getHeaderValue(email.payload.headers, 'Subject')}}
+                {{ email.subject }}
               </h3>
               <div
                 class="text-xs line-clamp-2 mb-2 transition-colors"
@@ -256,12 +255,11 @@ const emit = defineEmits([
                 <div
                   v-for="attachment in email.attachments"
                   :key="attachment.filename"
-                  @click.stop="downloadAttachment(attachment)"
                   class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-blue-400 transition-colors"
                   :class="darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
                 >
                   <div class="p-1.5 rounded-md" :class="darkMode ? 'bg-blue-500/10' : 'bg-blue-100'">
-                    <Paperclip :size="14" :class="darkMode ? 'text-blue-400' : 'text-blue-600'" />
+                    <File :size="14" :class="darkMode ? 'text-blue-400' : 'text-blue-600'" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">

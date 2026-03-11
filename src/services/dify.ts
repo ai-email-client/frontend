@@ -1,9 +1,11 @@
 import {
-    DifySummary
+    DifySummary,
+    DifyWritter
 } from "../interface/dify"
 
 import {
-    DifySummaryRequest
+    DifySummaryRequest,
+    WritterRequest
 } from "../interface/request"
 
 
@@ -21,6 +23,12 @@ const difyService = {
         req: string[]
     ): Promise<void> {
         const response = await difyAPI.summaryBatch(req)
+        return response
+    },
+    async writter(
+        req: WritterRequest
+    ): Promise<DifyWritter> {
+        const response = await difyAPI.writter(req)
         return response
     }
 }

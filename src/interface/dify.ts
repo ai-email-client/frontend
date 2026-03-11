@@ -25,3 +25,9 @@ export interface DifySummary {
   extraction_status: string | null;
   confidence: number | null;
 }
+
+export interface DifyWritter{
+  tone_used: string;
+  draft: string;
+  confidence: number;
+}

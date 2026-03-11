@@ -5,7 +5,6 @@ import {
   getLabel,
   formatDateTime,
   getFirstCharacter,
-  getHeaderValue,
   downloadAttachment
 } from '../utils'
 
@@ -48,7 +47,7 @@ const isLoading = computed(() => props.loading || isProcessing.value)
 
 const avatarHue = computed(() => {
   if (!props.email) return 0
-  const name = senderFormat(getHeaderValue(props.email.payload.headers, 'From'))?.name ?? ''
+  const name = senderFormat(props.email.sender)?.name ?? ''
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return Math.abs(hash) % 360
@@ -169,7 +168,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           class="text-2xl font-bold leading-snug tracking-tight flex items-center justify-between gap-4 p-4 rounded-2xl border"
           :class="darkMode ? 'text-white bg-gray-800/50 border-gray-700/40' : 'text-gray-900 bg-white border-gray-100 shadow-sm'"
         >
-          {{ getHeaderValue(email.payload.headers, 'Subject') || '(No Subject)' }}
+          {{ email.subject }}
         </h2>
 
         <!-- <Summary :data="summary" :darkMode="darkMode" :loading="loading" /> -->
@@ -187,7 +186,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                 background: `hsl(${avatarHue}, 60%, ${darkMode ? '38%' : '48%'})`
               }"
             >
-              {{ getFirstCharacter(senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name ?? '') }}
+              {{ getFirstCharacter(senderFormat(email.sender)?.name || '') }}
             </div>
 
             <div class="min-w-0">
@@ -196,13 +195,13 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                   class="font-semibold text-sm truncate"
                   :class="darkMode ? 'text-gray-100' : 'text-gray-900'"
                 >
-                  {{ senderFormat(getHeaderValue(email.payload.headers, 'From'))?.name }}
+                  {{ senderFormat(email.sender)?.name }}
                 </span>
                 <span
                   class="text-xs truncate"
                   :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  &lt;{{ senderFormat(getHeaderValue(email.payload.headers, 'From'))?.email }}&gt;
+                  &lt;{{ senderFormat(email.sender)?.email }}&gt;
                 </span>
               </div>
               <div class="flex flex-wrap gap-1.5 mt-1">
@@ -224,7 +223,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             :class="darkMode ? 'bg-gray-700/60 text-white' : 'bg-gray-100 text-black'"
           >
             <Clock :size="12" />
-            {{ formatDateTime(getHeaderValue(email.payload.headers, 'Date')) }}
+            {{ formatDateTime(email.date) }}
           </div>
         </div>
 

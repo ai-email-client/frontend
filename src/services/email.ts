@@ -26,17 +26,22 @@ const emailService = {
         pageToken: string | null,
         query: string | null,
         includeSpamTrash: boolean,
+        format: string,
+        metadataHeaders: string[]
     ): Promise<FetchMessagesResponse> => {
-
         const data = await emailAPI.fetch_emails(
-            {   maxResults: maxResults,
-                labelIds: labelIds,
-                pageToken: pageToken,
-                q: query,
-                includeSpamTrash: includeSpamTrash
-            }
-        )
-
+                {   maxResults: maxResults,
+                    labelIds: labelIds,
+                    pageToken: pageToken,
+                    q: query,
+                    includeSpamTrash: includeSpamTrash,
+                    format: format,
+                    metadataHeaders: metadataHeaders
+                }
+            )
+        if (!data.messages) {
+            throw new Error('Messages not found')
+        }
         return data
     },
     getDrafts: async (
@@ -44,13 +49,17 @@ const emailService = {
         pageToken: string | null,
         query: string | null,
         includeSpamTrash: boolean,
+        format: string,
+        metadataHeaders: string[]
     ): Promise<DraftsResponse> => {
 
         const data = await emailAPI.get_drafts(
             {   maxResults: maxResults,
                 pageToken: pageToken,
                 q: query,
-                includeSpamTrash: includeSpamTrash
+                includeSpamTrash: includeSpamTrash,
+                format: format,
+                metadataHeaders: metadataHeaders
             }
         )
 
@@ -204,6 +213,16 @@ const emailService = {
         try {
             const data = await emailAPI.upload_draft(draftId, body)
             return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
+    deleteDraft: async (
+        draftId: string
+    ): Promise<void> => {
+        try {
+            await emailAPI.delete_draft(draftId)
         } catch (err) {
             console.error('Fetch error:', err)
             throw err
