@@ -1,41 +1,55 @@
 <script setup lang="ts">
 import {
   ref,
+  onMounted,
   computed,
   watch
 } from 'vue'
-import {
-  useRoute,
-  useRouter
-} from 'vue-router'
 
 import EmailList from '../components/EmailList.vue'
 import EmailDetail from '../components/EmailDetail.vue'
 import Divider from '../components/Divider.vue'
+import EmailComposer from '../components/EmailComposer.vue'
+import type { UserProfile } from '../interface/user'
 
 
 
-import { useLabelStore } from '../stores/categoryStore'
 import emailService from '../services/email'
+// import difyService from '../services/dify'
+import { DifySummary } from '../interface/dify'
 import { Message } from '../interface/email'
 import { useUiStore } from '../stores/uiStore'
+import { useComposerStore } from '../stores/composerStore'
+import { useRoute } from 'vue-router'
+import { useLabelStore } from '../stores/categoryStore'
 
-const router = useRouter()
-const route = useRoute()
-const labelStore = useLabelStore()
-const uiStore = useUiStore()
-
-const props = defineProps<{
-  darkMode: boolean
-  listWidth: number
-}>()
+const props = defineProps({
+  user: {
+    type: Object as () => UserProfile,
+    default: null
+  },
+  darkMode: {
+    type: Boolean,
+    default: false
+  },
+  listWidth: {
+    type: Number,
+    default: 450
+  }
+})
 
 const emit = defineEmits(['update:listWidth'])
+const uiStore = useUiStore()
+const composerStore = useComposerStore()
+const route = useRoute()
+const labelStore = useLabelStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
 const emailList = ref<Message[]>([])
 const selectedEmail = ref<Message | null>(null)
+// const isLoadingEmail = ref(false)
+const summary = ref<DifySummary | null>(null)
 
 // ── Layout Control ──
 const MIN_PX  = 80
@@ -49,54 +63,59 @@ const currentWidth = computed({
 
 const collapsed   = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer  = computed(() => selectedEmail.value !== null)
-const currentLabel = computed((): string[] => {
-  const currentCategoryName = route.params.category;
-
-  const labelId = labelStore.getLabelIdByName(currentCategoryName as string);
-  
-  return labelId ? [labelId] : [];
-})
 
 // Params
-const labels            = ["SPAM"]
+const labels = computed(() => {
+    if (route.meta.labels) {
+        return route.meta.labels as string[]
+    }
+    if (route.params.category) {
+        const labelId = labelStore.getLabelIdByName(route.params.category.toString());
+        return [labelId]
+    }
+    if (route.params.spamType) {
+        const labelId = labelStore.getLabelIdByName(route.params.spamType.toString());
+        return [labelId]
+    }
+    return ['INBOX']
+})
+
+const includeSpamTrash = computed(() =>
+  (route.meta.includeSpamTrash as boolean) ?? false
+)
 const limit             = 20
 const query             = ''
-const includeSpamTrash  = false
+const format            = 'full'
+const metadataHeaders   : string[] = []
 
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
 const currentPage     = ref(0)
 const totalMessage    = ref(1)
 
-const resetPagination = () => {
-  emailList.value = []
-  currentPage.value   = 0
-  totalMessage.value  = 1
-  stackToken.value    = [""]
-  nextPageToken.value = null
-
-}
-
-
 const fetchEmails = async (
   labelIds: string[],
   maxResults: number,
   pageToken: string,
   query: string,
-  includeSpamTrash: boolean
+  includeSpamTrash: boolean,
+  format: string,
+  metadataHeaders: string[]
 ) => {
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
     getTotalMessage()
     const response = await emailService.fetchEmails(
-      labelIds, maxResults, pageToken, query, includeSpamTrash
+      labelIds, maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
     nextPageToken.value = response.nextPageToken
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-    emailList.value = response.messages    
+    emailList.value = response.messages
+    // const emailIds = response.messages.map(email => email.id)
+    // fetchSummary(emailIds)
 
   } catch (error) {
     console.error('Failed to fetch emails', error)
@@ -105,16 +124,23 @@ const fetchEmails = async (
   }
 }
 
+// const fetchSummary = async (emailIds: string[]) => {
+//   console.log(emailIds)
+//   await difyService.summaryBatch(emailIds)
+// }
+
 const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
   currentPage.value++
   emailList.value = []
   await fetchEmails(
-    labels,
-    limit,
-    stackToken.value[currentPage.value],
-    query,
-    includeSpamTrash
+      labels.value,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash.value,
+      format,
+      metadataHeaders
   )
 }
 
@@ -123,17 +149,31 @@ const prevPage = async () => {
   currentPage.value--
   emailList.value = []
   await fetchEmails(
-    labels,
-    limit,
-    stackToken.value[currentPage.value],
-    query,
-    includeSpamTrash
+      labels.value,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash.value,
+      format,
+      metadataHeaders
   )
 }
 
 const getTotalMessage = async () => {
-  const response = await emailService.getLabelById(labels[0])
+  const response = await emailService.getLabelById(labels.value[0])
   if (response.messagesTotal) totalMessage.value = response.messagesTotal
+}
+
+const handleOpenReplyComposer = () => {
+  composerStore.openComposer('reply', null, selectedEmail.value)
+}
+
+const handleOpenForwardComposer = () => {
+  composerStore.openComposer('forward', null, selectedEmail.value)
+}
+
+const handleCompose = () => {
+  composerStore.openComposer('new')
 }
 
 const handleDrag = (clientX: number) => {
@@ -156,19 +196,32 @@ const handleSelectEmail = async (email: Message) => {
 }
 
 const handleCollapse = () => { currentWidth.value = MIN_PX }
-const handleExpand   = () => { currentWidth.value = 350 }
+const handleExpand   = () => { currentWidth.value = 450 }
 
-watch(() => route.params.category, async () => {
-    await router.isReady()
-    resetPagination()
+onMounted(() => {
+  if (localStorage.getItem('jwt_token')) {
     fetchEmails(
-      labels,
+      labels.value,
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash
+      includeSpamTrash.value,
+      format,
+      metadataHeaders
     )
-}, { immediate: true })
+  }
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    stackToken.value = ['']
+    currentPage.value = 0
+    emailList.value = []
+    selectedEmail.value = null
+    fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
+  }
+)
 
 </script>
 
@@ -197,10 +250,14 @@ watch(() => route.params.category, async () => {
           limit,
           stackToken[currentPage],
           query,
-          includeSpamTrash
+          includeSpamTrash,
+          format,
+          metadataHeaders
         )"
         @prevPage="prevPage"
         @nextPage="nextPage"
+        @draft-email="handleCompose"
+
       />
     </div>
 
@@ -219,10 +276,15 @@ watch(() => route.params.category, async () => {
     >
       <EmailDetail
         :email="selectedEmail"
+        :summary="summary"
         :loading="uiStore.isLoading"
         :dark-mode="darkMode"
-        @back="selectedEmail = null"
+        @reply-email="handleOpenReplyComposer"
+        @forward-email="handleOpenForwardComposer"
       />
+      <div class="fixed w-[50%] bottom-0 right-10 z-50">
+        <EmailComposer />
+      </div>
     </div>
   </div>
 </template>

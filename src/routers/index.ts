@@ -1,13 +1,6 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, useRoute } from 'vue-router'
 
 import LoginPage from '../views/LoginPage.vue'
-import InboxPage from '../views/InboxPage.vue'
-import SpamPage from '../views/SpamPage.vue'
-import SentPage from '../views/SentPage.vue'
-import TrashPage from '../views/TrashPage.vue'
-import CategoryPage from '../views/CategoryPage.vue'
-import CallbackPage from '../views/Callback.vue'
-import DraftPage from '../views/DraftPage.vue'
 
 
 const routes = [
@@ -22,39 +15,45 @@ const routes = [
         component: LoginPage
     },
     {
-        path: '/inbox',
-        name: 'Inbox',
-        component: InboxPage
+    path: '/inbox',
+    name: 'Inbox',
+    component: () => import('../views/MailboxPage.vue'),
+    meta: { labels: ['INBOX'], includeSpamTrash: false }
     },
     {
         path: '/draft',
         name: 'Draft',
-        component: DraftPage
+        component: () => import('../views/MailboxPage.vue'),
+        meta: { labels: ['DRAFT'], includeSpamTrash: false }
     },
     {
         path: '/sent',
         name: 'Sent',
-        component: SentPage
+        component: () => import('../views/MailboxPage.vue'),
+        meta: { labels: ['SENT'], includeSpamTrash: false }
     },
     {
         path: '/category/:category',
         name: 'Category',
-        component: CategoryPage
+        component: () => import('../views/MailboxPage.vue'),
+        meta: { includeSpamTrash: false }
     },
     {
         path: '/trash',
         name: 'Trash',
-        component: TrashPage
+        component: () => import('../views/MailboxPage.vue'),
+        meta: { labels: ['TRASH'], includeSpamTrash: true }
     },
     {
         path: '/spam/:spamType',
         name: 'Spam',
-        component: SpamPage
+        component: () => import('../views/MailboxPage.vue'),
+        meta: { includeSpamTrash: true }
     },
     {
         path: '/callback',
         name: 'Callback',
-        component: CallbackPage
+        component: () => import('../views/Callback.vue')
     }
 ]
 
