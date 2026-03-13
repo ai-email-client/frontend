@@ -92,7 +92,6 @@ const fetchEmails = async (
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-    console.log(response.messages)
     emailList.value = response.messages
     // const emailIds = response.messages.map(email => email.id)
     // fetchSummary(emailIds)

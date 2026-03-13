@@ -66,7 +66,10 @@ export interface DraftCreateRequest {
   cc?: string;
   bcc?: string;
   subject?: string;
-  content?: string;
+  content?: {
+    text_html?: string,
+    text_plain?: string
+  }
   threadId?: string;
   in_reply_to?: string;
   references?: string;

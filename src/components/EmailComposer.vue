@@ -24,8 +24,6 @@ const lastSavedContent = ref('')
 
 const isSaving = ref(false)
 const isSending = ref(false)
-const isLoadingDraft = ref(false)
-const isLoadingThread = ref(false)
 const showCcBcc = ref(false)
 
 const isDirty = computed(() => {
@@ -38,12 +36,40 @@ let autoSaveTimeout: ReturnType<typeof setTimeout>
 
 const getCombinedHtmlContent = () => {
   if (!draft.value) return ''
+  
   let content = draft.value.body.replace(/\n/g, '<br>')
   
   if (draft.value.quotedBody) {
-    content += draft.value.quotedBody
+    let cleanQuote = draft.value.quotedBody
+    
+    if (content.trim() === '') {
+      return cleanQuote
+    } else {
+      cleanQuote = cleanQuote.replace(/^(?:<br\s*\/?>\s*)+/i, '')
+      content += '<br><br>' + cleanQuote
+    }
   }
   return content
+}
+
+const getCombinedPlainText = () => {
+  if (!draft.value) return ''
+  
+  let text = draft.value.body
+  
+  if (draft.value.quotedBody) {
+    let cleanTextQuote = draft.value.quotedBody
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .trim()
+      
+    if (text.trim() === '') {
+      return cleanTextQuote
+    } else {
+      return text + '\n\n' + cleanTextQuote
+    }
+  }
+  return text
 }
 
 const handleFileSelect = async (event: Event) => {
@@ -84,13 +110,18 @@ const saveDraft = async (force = false) => {
       cc: draft.value.cc || undefined,
       bcc: draft.value.bcc || undefined,
       subject: draft.value.subject,
-      content: getCombinedHtmlContent(),
+      content: {
+        text_html: getCombinedHtmlContent(),
+        text_plain: getCombinedPlainText()
+      },
       threadId: draft.value.threadId || undefined,
-      in_reply_to: draft.value.messageId || undefined,
+      in_reply_to: draft.value.in_reply_to || undefined,
       references: draft.value.references || undefined,
       attachments: existingAttachments.value 
     }
-
+    
+    console.log("Saving Payload:", payload)
+    
     if (draft.value.draftId) {
       await emailService.updateDraft(draft.value.draftId, payload)
     } else {
@@ -101,7 +132,6 @@ const saveDraft = async (force = false) => {
       }
     }
 
-    // อัปเดตข้อมูลที่บันทึกล่าสุด
     lastSavedContent.value = draft.value.to + draft.value.cc + draft.value.bcc + draft.value.subject + draft.value.body
     composerStore.triggerRefresh()
   } catch (error) {
@@ -156,12 +186,11 @@ const discardDraft = async () => {
   composerStore.triggerRefresh()
 }
 
-// 🟢 Watchers สำหรับ Auto-save (ตรวจสอบ cc และ bcc ด้วย)
 watch(() => [draft.value?.to, draft.value?.cc, draft.value?.bcc, draft.value?.subject, draft.value?.body], () => {
   clearTimeout(autoSaveTimeout)
   autoSaveTimeout = setTimeout(() => {
     saveDraft()
-  }, 3000) // เซฟทุกๆ 3 วินาทีหลังจากหยุดพิมพ์
+  }, 3000)
 }, { deep: true })
 
 onBeforeUnmount(() => clearTimeout(autoSaveTimeout))

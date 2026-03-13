@@ -5,26 +5,27 @@ import {
   onMounted,
   watch,
 } from 'vue'
-
-import {
-  useRoute,
-  useRouter
-} from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   Moon,
   Sun
 } from 'lucide-vue-next'
+
 import AppSidebar from './components/AppSidebar.vue'
+// 🟢 1. Import EmailComposer เข้ามาเพื่อให้ Vue รู้จัก
+import EmailComposer from './components/EmailComposer.vue' 
+
 import { useLabelStore } from './stores/categoryStore'
 import { useUiStore } from './stores/uiStore'
 import userService from './services/user'
 import { UserProfile } from './interface/user'
 
-const route = useRoute()
-const router = useRouter()
+
 const uiStore = useUiStore()
 const labelStore = useLabelStore()
+const route = useRoute()
+const router = useRouter()
 
 const sidebarCollapsed = ref(false)
 const darkMode = ref(false)
@@ -74,7 +75,6 @@ const handleAuthCheck = async () => {
   if (route.path === '/' || route.name === 'Login') {
     router.replace('/inbox')
   }
-
 }
 
 const handleLogout = () => {
@@ -174,8 +174,11 @@ watch(() => route.params.code, () => {
             </span>
           </div>
         </header>
-        <div class="fixed w-[50%] bottom-0 right-10 z-50"> <EmailComposer />
-</div>
+
+        <!-- 🟢 2. วาง EmailComposer แบบไม่ต้องมี div class fixed ครอบ 
+             เพราะใน EmailComposer.vue มีคลาส fixed จัดการตำแหน่งตัวเองให้สวยงามอยู่แล้ว -->
+        <EmailComposer v-if="showLayout" />
+
         <router-view
           v-model:darkMode="darkMode"
           v-model:listWidth="listWidth"

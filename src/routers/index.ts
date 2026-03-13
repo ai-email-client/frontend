@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-import App from '../App.vue'
 import LoginPage from '../views/LoginPage.vue'
 import InboxPage from '../views/InboxPage.vue'
 import SpamPage from '../views/SpamPage.vue'
@@ -15,7 +14,7 @@ const routes = [
     {
         path: '/',
         name: 'Home',
-        component: App
+        component: () => import('../App.vue')
     },
     {
         path: '/login',

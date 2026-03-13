@@ -12,7 +12,7 @@ import {
 } from 'lucide-vue-next'
 
 import { useLabelStore } from '../stores/categoryStore';
-import { formatTimeAgo, getFirstCharacter, getLabel, senderFormat, getHeaderValue, formatSize } from '../utils';
+import { formatTimeAgo, getFirstCharacter, getLabel, formatSize } from '../utils';
 import { Message } from '../interface/email';
 
 const labelStore = useLabelStore();
@@ -80,9 +80,9 @@ const emit = defineEmits([
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105')
           ]"
         >
-          {{ getFirstCharacter(senderFormat(email.sender)?.name || '') }}
+          {{ getFirstCharacter(email.sender?.name || '') }}
           <span
-            v-if="email.labelIds.includes('UNREAD')"
+            v-if="email.labelIds?.includes('UNREAD')"
             class="absolute top-0 right-0 w-2.5 h-2.5 bg-blue-500 rounded-full border-2"
             :class="darkMode ? 'border-gray-900' : 'border-white'"
           />
@@ -193,51 +193,51 @@ const emit = defineEmits([
           <div class="flex items-start justify-between gap-4">
             <div
               class="flex-1 min-w-0 transition-opacity duration-200"
-              :class="!email.labelIds.includes('UNREAD') ? 'opacity-50' : 'opacity-100'"
+              :class="!email.labelIds?.includes('UNREAD') ? 'opacity-50' : 'opacity-100'"
             >
               <div class="flex items-center justify-between gap-3 mb-1">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <div v-if="email.labelIds.includes('UNREAD')" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                  <div v-if="email.labelIds?.includes('UNREAD')" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
                   <h3
                     class="text-md truncate flex-shrink-0 max-w-[150px] sm:max-w-[200px]"
                     :class="[
-                      email.labelIds.includes('UNREAD') ? 'font-semibold' : 'font-medium',
+                      email.labelIds?.includes('UNREAD') ? 'font-semibold' : 'font-medium',
                       darkMode
-                        ? (email.labelIds.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
-                        : (email.labelIds.includes('UNREAD') ? 'text-black' : 'text-gray-500')
+                        ? (email.labelIds?.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
+                        : (email.labelIds?.includes('UNREAD') ? 'text-black' : 'text-gray-500')
                     ]"
-                  >{{ senderFormat(email.sender)?.name }}
+                  >{{ email.sender?.name }}
                   </h3>
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-black/5 dark:border-white/10"
                       :style="{
-                        backgroundColor: labelStore.getLabelById(getLabel(email.labelIds)[0])?.color?.backgroundColor,
-                        color: labelStore.getLabelById(getLabel(email.labelIds)[0])?.color?.textColor
+                        backgroundColor: labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.backgroundColor,
+                        color: labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.textColor
                       }"
                     >
                       <Tag class="w-3 h-3 opacity-70" />
-                      <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.labelIds)[0])?.name }}</span>
+                      <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.name }}</span>
                     </span>
                   </div>
                 </div>
                 <div
                   class="text-xs flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
                   :class="darkMode
-                    ? (email.labelIds.includes('UNREAD') ? 'text-gray-300' : 'text-gray-500')
-                    : (email.labelIds.includes('UNREAD') ? 'text-gray-600' : 'text-gray-400')"
+                    ? (email.labelIds?.includes('UNREAD') ? 'text-gray-300' : 'text-gray-500')
+                    : (email.labelIds?.includes('UNREAD') ? 'text-gray-600' : 'text-gray-400')"
                 >
                   <Clock class="w-3 h-3" />
-                  {{ formatTimeAgo(email.date) }}
+                  {{ formatTimeAgo(email.date || '') }}
                 </div>
               </div>
               <h3
                 class="text-sm truncate"
                 :class="[
-                  email.labelIds.includes('UNREAD') ? 'font-semibold' : 'font-normal',
+                  email.labelIds?.includes('UNREAD') ? 'font-semibold' : 'font-normal',
                   darkMode
-                    ? (email.labelIds.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
-                    : (email.labelIds.includes('UNREAD') ? 'text-black' : 'text-gray-600')
+                    ? (email.labelIds?.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
+                    : (email.labelIds?.includes('UNREAD') ? 'text-black' : 'text-gray-600')
                 ]"
               >
                 {{ email.subject }}

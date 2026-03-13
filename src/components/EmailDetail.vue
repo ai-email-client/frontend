@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   formatSize,
-  senderFormat,
   getLabel,
   formatDateTime,
   getFirstCharacter,
@@ -47,7 +46,7 @@ const isLoading = computed(() => props.loading || isProcessing.value)
 
 const avatarHue = computed(() => {
   if (!props.email) return 0
-  const name = senderFormat(props.email.sender)?.name ?? ''
+  const name = props.email.sender?.name ?? ''
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return Math.abs(hash) % 360
@@ -186,7 +185,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                 background: `hsl(${avatarHue}, 60%, ${darkMode ? '38%' : '48%'})`
               }"
             >
-              {{ getFirstCharacter(senderFormat(email.sender)?.name || '') }}
+              {{ getFirstCharacter(email.sender?.name || '') }}
             </div>
 
             <div class="min-w-0">
@@ -195,18 +194,18 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                   class="font-semibold text-sm truncate"
                   :class="darkMode ? 'text-gray-100' : 'text-gray-900'"
                 >
-                  {{ senderFormat(email.sender)?.name }}
+                  {{ email.sender?.name }}
                 </span>
                 <span
                   class="text-xs truncate"
                   :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  &lt;{{ senderFormat(email.sender)?.email }}&gt;
+                  &lt;{{ email.sender?.email }}&gt;
                 </span>
               </div>
               <div class="flex flex-wrap gap-1.5 mt-1">
                 <span
-                  v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.labelIds))"
+                  v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.labelIds || []))"
                   :key="index"
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-black/5"
                   :style="{ backgroundColor: label?.color?.backgroundColor, color: label?.color?.textColor }"
@@ -223,7 +222,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             :class="darkMode ? 'bg-gray-700/60 text-white' : 'bg-gray-100 text-black'"
           >
             <Clock :size="12" />
-            {{ formatDateTime(email.date) }}
+            {{ formatDateTime(email.date || '') }}
           </div>
         </div>
 
@@ -234,7 +233,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           <div v-if="showHtml" class="bg-white">
             <!-- {{ sanitizeHtml(props.email?.text_html)}} -->
             <EmailShadow 
-              :content="props.email?.text_html" 
+              :content="email.text_html || ''" 
               :attachments="attachments" 
             />
           </div>
