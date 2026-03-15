@@ -9,7 +9,7 @@ import {
 } from "../interface/request"
 
 export default {
-    async getSummary(req: DifySummaryRequest): Promise<DifySummary> {
+    async get_summary(req: DifySummaryRequest): Promise<DifySummary> {
         try {
             const response = await api.post<DifySummary>('/dify/summary', req)
             return response.data

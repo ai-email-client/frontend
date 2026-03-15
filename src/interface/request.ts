@@ -9,7 +9,8 @@ export interface UserRequest {
 export interface DifySummaryRequest {
   sender: string;
   msg_id: string;
-  plain_text: string;
+  text_plain: string;
+  text_html: string;
   email_tags: string[];
 }
 
@@ -69,12 +70,12 @@ export interface DraftCreateRequest {
   content?: {
     text_html?: string,
     text_plain?: string
+    attachments?: Attachment[]
   }
   threadId?: string;
   in_reply_to?: string;
   references?: string;
   message?: Message|null;
-  attachments?: Attachment[]
 }
 
 export interface WritterRequest {

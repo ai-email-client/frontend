@@ -23,8 +23,7 @@ const routes = [
     {
         path: '/draft',
         name: 'Draft',
-        component: () => import('../views/MailboxPage.vue'),
-        meta: { labels: ['DRAFT'], includeSpamTrash: false }
+        component: () => import('../views/DraftPage.vue'),
     },
     {
         path: '/sent',

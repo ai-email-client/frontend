@@ -22,14 +22,13 @@ import {
 
 import EmailShadow from './EmailShadow.vue'
 import { useLabelStore } from '../stores/categoryStore'
-// import Summary from './Summary.vue';
-// import { DifySummary } from '../interface/dify';
 import { Attachment, Message } from '../interface/email';
 import emailService from '../services/email';
+import { DifySummary } from '../interface/dify';
 
 const props = defineProps<{
   email: Message | null,
-  // summary: DifySummary | null,
+  summary: DifySummary | null,
   loading: boolean,
   darkMode: boolean
 }>()

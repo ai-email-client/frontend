@@ -58,7 +58,7 @@ const emit = defineEmits([
 
         <!-- Collapsed empty state -->
         <div
-          v-if="!loading && emails.length === 0"
+          v-if="!loading && emails?.length === 0"
           class="flex flex-col items-center gap-1.5 mt-4"
           :class="darkMode ? 'text-gray-700' : 'text-gray-300'"
         >
@@ -152,7 +152,7 @@ const emit = defineEmits([
       </div>
       <div class="flex-1 overflow-y-auto custom-scrollbar">
         <div
-          v-if="!loading && emails.length === 0"
+          v-if="!loading && emails?.length === 0"
           class="flex flex-col items-center justify-center h-full gap-3 select-none"
         >
           <div

@@ -15,13 +15,15 @@ import type { UserProfile } from '../interface/user'
 
 
 import emailService from '../services/email'
-// import difyService from '../services/dify'
+import difyService from '../services/dify'
 import { DifySummary } from '../interface/dify'
 import { Message } from '../interface/email'
 import { useUiStore } from '../stores/uiStore'
 import { useComposerStore } from '../stores/composerStore'
 import { useRoute } from 'vue-router'
 import { useLabelStore } from '../stores/categoryStore'
+import { DifySummaryRequest } from '../interface/request'
+import { useSummaryStore } from '../stores/summaryStore'
 
 const props = defineProps({
   user: {
@@ -39,10 +41,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:listWidth'])
+const route = useRoute()
 const uiStore = useUiStore()
 const composerStore = useComposerStore()
-const route = useRoute()
 const labelStore = useLabelStore()
+const summaryStore = useSummaryStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
@@ -83,7 +86,7 @@ const labels = computed(() => {
 const includeSpamTrash = computed(() =>
   (route.meta.includeSpamTrash as boolean) ?? false
 )
-const limit             = 20
+const limit             = 5
 const query             = ''
 const format            = 'full'
 const metadataHeaders   : string[] = []
@@ -105,7 +108,7 @@ const fetchEmails = async (
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
-    getTotalMessage()
+
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
@@ -113,9 +116,11 @@ const fetchEmails = async (
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
+
+    summaryStore.pruneByIds(response.messages.map(e => e.id))
     emailList.value = response.messages
-    // const emailIds = response.messages.map(email => email.id)
-    // fetchSummary(emailIds)
+    
+    fetchSummary(response.messages)
 
   } catch (error) {
     console.error('Failed to fetch emails', error)
@@ -124,10 +129,31 @@ const fetchEmails = async (
   }
 }
 
-// const fetchSummary = async (emailIds: string[]) => {
-//   console.log(emailIds)
-//   await difyService.summaryBatch(emailIds)
-// }
+const fetchSummary = (emails: Message[]) => {
+  Promise.allSettled(
+    emails.map(async (email) => {
+      const req: DifySummaryRequest = {
+        sender:     email.sender?.email || '',
+        msg_id:     email.id,
+        text_plain: email.text_plain  || '',
+        text_html:  email.text_html   || '',
+        email_tags: email.labelIds    || [],
+      }
+
+      summaryStore.setSummary(email.id, 'processing')
+
+      const res = await difyService.getSummary(req)
+
+      if (res?.status === 'done') {
+        summaryStore.setSummary(email.id, res)
+      } else if (res?.status === 'queued' || res?.status === 'processing') {
+        summaryStore.setSummary(email.id, 'processing')
+      } else {
+        summaryStore.setSummary(email.id, 'error')
+      }
+    })
+  )
+}
 
 const nextPage = async () => {
   if (!nextPageToken.value && currentPage.value >= stackToken.value.length - 1) return
@@ -200,6 +226,7 @@ const handleExpand   = () => { currentWidth.value = 450 }
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
+    getTotalMessage()
     fetchEmails(
       labels.value,
       limit,
@@ -217,8 +244,11 @@ watch(
   () => {
     stackToken.value = ['']
     currentPage.value = 0
+    totalMessage.value = 1
     emailList.value = []
     selectedEmail.value = null
+    summaryStore.clearSummaries()
+    getTotalMessage()
     fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
   }
 )
@@ -282,7 +312,7 @@ watch(
         @reply-email="handleOpenReplyComposer"
         @forward-email="handleOpenForwardComposer"
       />
-      <div class="fixed w-[50%] bottom-0 right-10 z-50">
+      <div class="fixed w-[100%] bottom-0 right-10 z-50">
         <EmailComposer />
       </div>
     </div>

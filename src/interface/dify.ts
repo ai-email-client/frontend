@@ -7,6 +7,11 @@ export enum Status {
   error = "error",
 }
 
+export interface Importance {
+    level: string | null;
+    reason: string | null;
+}
+
 export interface DifySummary {
   sender: Sender | null;
   email_category: string | null;
@@ -16,6 +21,7 @@ export interface DifySummary {
   instructions: string[] | null;
   required_items: string[] | null;
   summary: string | null;
+  importance: Importance | null;
   is_spam: boolean | null;
   is_threat: boolean | null;
   spam_type: string | null;
@@ -24,6 +30,8 @@ export interface DifySummary {
   security_confidence: number | null;
   extraction_status: string | null;
   confidence: number | null;
+  status: string | null;
+  msg_id: string | null;
 }
 
 export interface DifyWritter{

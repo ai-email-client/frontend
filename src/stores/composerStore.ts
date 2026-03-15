@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { Message } from '../interface/email'
+import { Message, Sender } from '../interface/email'
 
 export interface DraftState {
+  type: 'new' | 'reply' | 'forward' | 'edit'
   draftId: string | null
   threadId: string | null
   messageId: string | null
   message: Message | null
-  type: 'new' | 'reply' | 'forward' | 'edit'
   to: string
   cc: string
   bcc: string
@@ -17,6 +17,15 @@ export interface DraftState {
   references: string | null
   quotedBody: string | null 
   isMinimized: boolean
+}
+
+const joinRecipients = (list: Sender[] | string | null | undefined): string => {
+  if (!list) return ''
+  if (typeof list === 'string') return list
+  return list
+    .map(r => r.email?.trim())
+    .filter(Boolean)
+    .join(', ')
 }
 
 export const useComposerStore = defineStore('composer', () => {
@@ -41,11 +50,11 @@ export const useComposerStore = defineStore('composer', () => {
     let references: string | null = null
 
     if (originalEmail) {
-      const from = originalEmail.sender
-      const date = originalEmail.date
-      const subject = originalEmail.subject
-      const to = originalEmail.to
-    
+      const from = originalEmail.sender?.email || ''
+      const date = originalEmail.date || ''
+      const subject = originalEmail.subject || ''
+      const to = joinRecipients(originalEmail.to as any)
+
       threadId = originalEmail.threadId || null
       messageId = originalEmail.id || null
 
@@ -53,9 +62,9 @@ export const useComposerStore = defineStore('composer', () => {
         initialTo = from
         initialSubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`
         initialBody = ''
-        
+
         inReplyTo = originalEmail.message_id || null
-        
+
         const prevRefs = originalEmail.references || ''
         const currentId = originalEmail.message_id || ''
         references = `${prevRefs} ${currentId}`.trim()
@@ -65,27 +74,27 @@ export const useComposerStore = defineStore('composer', () => {
       } else if (type === 'forward') {
         initialSubject = subject.toLowerCase().startsWith('fwd:') ? subject : `Fwd: ${subject}`
         initialBody = ''
-        
+
         initialQuotedBody = `<br><br>-------- Forwarded Message --------<br>Subject: ${subject}<br>Date: ${date}<br>From: ${from}<br>To: ${to}<br><br>${originalEmail.text_html || originalEmail.text_plain}`
         references = originalEmail.references || null
 
       } else if (type === 'edit') {
-        initialTo = to || ''
-        initialCc = originalEmail.cc || ''
-        initialBcc = originalEmail.bcc || ''
+        initialTo   = joinRecipients(originalEmail.to)
+        initialCc   = joinRecipients(originalEmail.cc)
+        initialBcc  = joinRecipients(originalEmail.bcc)
         initialSubject = subject || ''
-        
-        inReplyTo = originalEmail.in_reply_to || null
+
+        inReplyTo  = originalEmail.in_reply_to || null
         references = originalEmail.references || null
-        
+
         const fullHtml = originalEmail.text_html || originalEmail.text_plain || ''
-        
-        const quoteRegex = /(?:<br\s*\/?>\s*)*(<div[^>]*class=["']?gmail_quote["']?[^>]*>|<div[^>]*class=["']?moz-cite-prefix["']?[^>]*>|<div[^>]*id=["']?(?:divRplyFwdMsg|mail-editor-reference-message-container)["']?[^>]*>|<hr[^>]*tabindex=["']?-1["']?[^>]*>|<blockquote[^>]*type=["']?cite["']?[^>]*>|-------- Forwarded Message --------)/i;
-        
-        const match = fullHtml.match(quoteRegex);
-        
+
+        const quoteRegex = /(?:<br\s*\/?>\s*)*(<div[^>]*class=["']?gmail_quote["']?[^>]*>|<div[^>]*class=["']?moz-cite-prefix["']?[^>]*>|<div[^>]*id=["']?(?:divRplyFwdMsg|mail-editor-reference-message-container)["']?[^>]*>|<hr[^>]*tabindex=["']?-1["']?[^>]*>|<blockquote[^>]*type=["']?cite["']?[^>]*>|-------- Forwarded Message --------)/i
+
+        const match = fullHtml.match(quoteRegex)
+
         if (match && match.index !== undefined) {
-          const splitIndex = match.index;
+          const splitIndex = match.index
           initialBody = fullHtml.substring(0, splitIndex)
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<[^>]*>/g, '')
@@ -100,7 +109,6 @@ export const useComposerStore = defineStore('composer', () => {
         }
       }
     }
-
     activeComposer.value = {
       draftId, threadId, messageId, type, message: originalEmail,
       to: initialTo, cc: initialCc, bcc: initialBcc,
@@ -108,6 +116,7 @@ export const useComposerStore = defineStore('composer', () => {
       in_reply_to: inReplyTo, references: references,
       quotedBody: initialQuotedBody, isMinimized: false
     }
+    console.log("Active Composer:", activeComposer.value)
   }
 
   const closeComposer = () => { activeComposer.value = null }

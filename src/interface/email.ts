@@ -93,6 +93,7 @@ export interface Message {
 export interface Sender {
   name?: string | null;
   email?: string | null;
+  type?: string | null;
 }
 
 export interface Draft{
