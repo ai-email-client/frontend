@@ -22,7 +22,6 @@ import { useUiStore } from '../stores/uiStore'
 import { useComposerStore } from '../stores/composerStore'
 import { useRoute } from 'vue-router'
 import { useLabelStore } from '../stores/categoryStore'
-import { DifySummaryRequest } from '../interface/request'
 import { useSummaryStore } from '../stores/summaryStore'
 
 const props = defineProps({
@@ -86,7 +85,7 @@ const labels = computed(() => {
 const includeSpamTrash = computed(() =>
   (route.meta.includeSpamTrash as boolean) ?? false
 )
-const limit             = 5
+const limit             = 10
 const query             = ''
 const format            = 'full'
 const metadataHeaders   : string[] = []
@@ -119,7 +118,7 @@ const fetchEmails = async (
 
     summaryStore.pruneByIds(response.messages.map(e => e.id))
     emailList.value = response.messages
-    
+
     fetchSummary(response.messages)
 
   } catch (error) {
@@ -130,29 +129,30 @@ const fetchEmails = async (
 }
 
 const fetchSummary = (emails: Message[]) => {
-  Promise.allSettled(
-    emails.map(async (email) => {
-      const req: DifySummaryRequest = {
-        sender:     email.sender?.email || '',
-        msg_id:     email.id,
-        text_plain: email.text_plain  || '',
-        text_html:  email.text_html   || '',
-        email_tags: email.labelIds    || [],
-      }
+  emails.forEach(e => summaryStore.setSummary(e.id, 'processing'))
 
-      summaryStore.setSummary(email.id, 'processing')
-
-      const res = await difyService.getSummary(req)
-
-      if (res?.status === 'done') {
-        summaryStore.setSummary(email.id, res)
-      } else if (res?.status === 'queued' || res?.status === 'processing') {
-        summaryStore.setSummary(email.id, 'processing')
-      } else {
-        summaryStore.setSummary(email.id, 'error')
-      }
+  difyService.getSummaryBatch({ 
+    emails: emails.map(e => ({ 
+      msg_id: e.id, 
+      email_tags: e.labelIds || [],
+      sender: e.sender?.email || '',
+      text_plain: e.text_plain || e.text_html || ''
+    }))
+  })
+    .then(res => {
+      res.forEach((item: DifySummary) => {
+        if (item.status === 'done') {
+          summaryStore.setSummary(item.msg_id!, item)
+        } else if (item.status === 'error') {
+          summaryStore.setSummary(item.msg_id!, 'error')
+        } else {
+          summaryStore.setSummary(item.msg_id!, 'processing')
+        }
+      })
     })
-  )
+    .catch(() => {
+      emails.forEach(e => summaryStore.setSummary(e.id, 'error'))
+    })
 }
 
 const nextPage = async () => {
@@ -242,6 +242,7 @@ onMounted(() => {
 watch(
   () => route.fullPath,
   () => {
+  if (route.name !== 'sent') {
     stackToken.value = ['']
     currentPage.value = 0
     totalMessage.value = 1
@@ -250,6 +251,7 @@ watch(
     summaryStore.clearSummaries()
     getTotalMessage()
     fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
+    }
   }
 )
 

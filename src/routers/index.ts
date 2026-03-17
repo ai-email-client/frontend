@@ -44,9 +44,9 @@ const routes = [
         meta: { labels: ['TRASH'], includeSpamTrash: true }
     },
     {
-        path: '/spam/:spamType',
+        path: '/spam',
         name: 'Spam',
-        component: () => import('../views/MailboxPage.vue'),
+        component: () => import('../views/SpamPage.vue'),
         meta: { includeSpamTrash: true }
     },
     {

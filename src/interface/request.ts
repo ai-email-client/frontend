@@ -10,8 +10,11 @@ export interface DifySummaryRequest {
   sender: string;
   msg_id: string;
   text_plain: string;
-  text_html: string;
   email_tags: string[];
+}
+
+export interface DifySummaryBatchRequest {
+  emails: DifySummaryRequest[];
 }
 
 export interface AttachmentRequest {

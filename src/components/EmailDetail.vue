@@ -22,9 +22,11 @@ import {
 
 import EmailShadow from './EmailShadow.vue'
 import { useLabelStore } from '../stores/categoryStore'
+import { useSummaryStore } from '../stores/summaryStore'
 import { Attachment, Message } from '../interface/email';
 import emailService from '../services/email';
 import { DifySummary } from '../interface/dify';
+import { Sparkles, AlertCircle, ShieldAlert } from 'lucide-vue-next'
 
 const props = defineProps<{
   email: Message | null,
@@ -35,6 +37,19 @@ const props = defineProps<{
 
 const showHtml = ref(true)
 const labelStore = useLabelStore()
+const summaryStore = useSummaryStore()
+
+const emailSummary = computed(() => {
+  if (!props.email) return null
+  const s = summaryStore.getSummary(props.email.id)
+  if (!s || s === 'processing' || s === 'error') return null
+  return s as DifySummary
+})
+
+const summaryStatus = computed(() => {
+  if (!props.email) return null
+  return summaryStore.getSummary(props.email.id)
+})
 
 const hasHtml = computed(() => !!props.email?.text_html && props.email.text_html.trim().length > 0)
 const hasText = computed(() => !!props.email?.text_plain && props.email.text_plain.trim().length > 0)
@@ -169,7 +184,129 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           {{ email.subject }}
         </h2>
 
-        <!-- <Summary :data="summary" :darkMode="darkMode" :loading="loading" /> -->
+        <div
+          v-if="summaryStatus === 'processing'"
+          class="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+          :class="darkMode ? 'bg-gray-800/50 border-gray-700/40' : 'bg-white border-gray-100 shadow-sm'"
+        >
+          <div class="w-4 h-4 rounded-full border-2 border-transparent border-t-blue-500 animate-spin shrink-0" />
+          <span class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">AI analyzing...</span>
+        </div>
+
+        <div
+          v-else-if="summaryStatus === 'error'"
+          class="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+          :class="darkMode ? 'bg-red-900/20 border-red-700/30' : 'bg-red-50 border-red-100'"
+        >
+          <AlertCircle :size="16" class="text-red-400 shrink-0" />
+          <span class="text-sm text-red-400">Failed to analyze email</span>
+        </div>
+
+        <div
+          v-else-if="emailSummary"
+          class="rounded-2xl border overflow-hidden"
+          :class="darkMode ? 'bg-gray-800/50 border-gray-700/40' : 'bg-white border-gray-100 shadow-sm'"
+        >
+          <div
+            class="flex items-center justify-between px-4 py-3 border-b"
+            :class="darkMode ? 'border-gray-700/40' : 'border-gray-100'"
+          >
+            <div class="flex items-center gap-2">
+              <Sparkles :size="14" class="text-blue-400" />
+              <span class="text-xs font-semibold uppercase tracking-wider" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                AI Summary
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                v-if="emailSummary.importance?.level"
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                :class="{
+                  'bg-red-100 text-red-600':    emailSummary.importance.level.toLowerCase() === 'high',
+                  'bg-yellow-100 text-yellow-600': emailSummary.importance.level.toLowerCase() === 'medium',
+                  'bg-green-100 text-green-600':  emailSummary.importance.level.toLowerCase() === 'low',
+                }"
+              >
+                {{ emailSummary.importance.level }}
+              </span>
+              <span
+                v-if="emailSummary.is_spam"
+                class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 uppercase tracking-wide"
+              >
+                <ShieldAlert :size="10" /> Spam
+              </span>
+              <span
+                v-if="emailSummary.email_category"
+                class="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
+                :class="darkMode ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-blue-50 text-blue-600 border-blue-100'"
+              >
+                {{ emailSummary.email_category }}
+              </span>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 space-y-3">
+            <p
+              v-if="emailSummary.summary"
+              class="text-sm leading-relaxed"
+              :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+            >
+              {{ emailSummary.summary }}
+            </p>
+
+            <p
+              v-if="emailSummary.importance?.reason"
+              class="text-xs"
+              :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
+            >
+              {{ emailSummary.importance.reason }}
+            </p>
+
+            <div
+              v-if="emailSummary.date || emailSummary.time || emailSummary.location"
+              class="flex flex-wrap gap-3 text-xs"
+              :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+            >
+              <span v-if="emailSummary.date">📅 {{ emailSummary.date }}</span>
+              <span v-if="emailSummary.time">🕐 {{ emailSummary.time }}</span>
+              <span v-if="emailSummary.location">📍 {{ emailSummary.location }}</span>
+            </div>
+
+            <div v-if="emailSummary.instructions?.length">
+              <p class="text-[10px] font-semibold uppercase tracking-wider mb-1.5" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+                To Do
+              </p>
+              <ul class="space-y-1">
+                <li
+                  v-for="(item, i) in emailSummary.instructions"
+                  :key="i"
+                  class="flex items-start gap-2 text-xs"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-600'"
+                >
+                  <span class="text-blue-400 mt-0.5 shrink-0">•</span>
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+
+            <div v-if="emailSummary.required_items?.length">
+              <p class="text-[10px] font-semibold uppercase tracking-wider mb-1.5" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+                Required Items
+              </p>
+              <ul class="space-y-1">
+                <li
+                  v-for="(item, i) in emailSummary.required_items"
+                  :key="i"
+                  class="flex items-start gap-2 text-xs"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-600'"
+                >
+                  <span class="text-green-400 mt-0.5 shrink-0">•</span>
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
         <div
           class="flex items-center justify-between gap-4 p-4 rounded-2xl border"
@@ -230,7 +367,6 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           :class="darkMode ? 'border-gray-700/40' : 'border-gray-100 shadow-sm'"
         >
           <div v-if="showHtml" class="bg-white">
-            <!-- {{ sanitizeHtml(props.email?.text_html)}} -->
             <EmailShadow 
               :content="email.text_html || ''" 
               :attachments="attachments" 

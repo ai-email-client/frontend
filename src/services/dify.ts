@@ -5,6 +5,7 @@ import {
 
 import {
     DifySummaryRequest,
+    DifySummaryBatchRequest,
     WritterRequest
 } from "../interface/request"
 
@@ -19,11 +20,16 @@ const difyService = {
         const response = await difyAPI.get_summary(req)
         return response
     },
-    async summaryBatch(
-        req: string[]
-    ): Promise<void> {
-        const response = await difyAPI.summaryBatch(req)
-        return response
+    async getSummaryBatch(
+        req: DifySummaryBatchRequest
+    ): Promise<DifySummary[]> {
+        try {
+            const response = await difyAPI.getSummaryBatch(req)
+            return response
+        } catch (error) {
+            console.error('Error fetching summary batch:', error)
+            return []
+        }
     },
     async writter(
         req: WritterRequest

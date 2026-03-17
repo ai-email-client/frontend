@@ -84,6 +84,9 @@ const emailService = {
 
         return data
     },
+    deleteMessage: async (msgId: string): Promise<void> => {
+        await emailAPI.delete_message(msgId)
+    },
     downloadAttachment: async (
         file: Attachment,
         msgId: string

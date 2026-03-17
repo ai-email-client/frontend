@@ -9,7 +9,7 @@ export const useSummaryStore = defineStore('summary', () => {
     summaries.value[msg_id] = data
   }
 
-  const getSummary = (msg_id: string) => summaries.value[msg_id] ?? null
+  const getSummary = (msg_id: string): DifySummary | 'processing' | 'error' | null => summaries.value[msg_id] ?? null
 
   const pruneByIds = (activeIds: string[]) => {
     const active = new Set(activeIds)

@@ -163,7 +163,7 @@ export default {
             throw error
         }
     },
-    async messageDelete(id: string) {
+    async delete_message(id: string) {
         try {
             const response = await api.delete<CategoryListResponse>(`/email/message/${id}`)
             return response.data
@@ -171,12 +171,12 @@ export default {
             throw error
         }
     },
-    async messageBatchDelete(ids: string[]) {
+    async delete_messageBatch(ids: string[]) {
         try {
             const payload = {
                 ids: ids
             }
-            const response = await api.post<CategoryListResponse>('/email/message/batch_delete', payload)
+            const response = await api.delete<CategoryListResponse>('/email/message/batch', { data: payload })
             return response.data
         } catch (error) {
             throw error

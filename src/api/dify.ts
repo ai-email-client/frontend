@@ -5,6 +5,7 @@ import {
 } from "../interface/dify"
 import {
     DifySummaryRequest,
+    DifySummaryBatchRequest,
     WritterRequest
 } from "../interface/request"
 
@@ -18,9 +19,9 @@ export default {
             throw error
         }
     },
-    async summaryBatch(req: string[]): Promise<void> {
+    async getSummaryBatch(req: DifySummaryBatchRequest): Promise<DifySummary[]> {
         try {
-            const response = await api.post<void>('/dify/summary_batch', req)
+            const response = await api.post<DifySummary[]>('/dify/summary/batch', req)
             return response.data
         } catch (error) {
             console.error('Error getting Dify summary batch:', error)

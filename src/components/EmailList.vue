@@ -12,10 +12,13 @@ import {
 } from 'lucide-vue-next'
 
 import { useLabelStore } from '../stores/categoryStore';
+import { useSummaryStore } from '../stores/summaryStore';
 import { formatTimeAgo, getFirstCharacter, getLabel, formatSize } from '../utils';
 import { Message } from '../interface/email';
+import { DifySummary } from '../interface/dify';
 
 const labelStore = useLabelStore();
+const summaryStore = useSummaryStore();
 
 defineProps<{
   emails: Message[],
@@ -247,6 +250,43 @@ const emit = defineEmits([
                 :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
               >
                 {{ email.snippet }}
+              </div>
+
+              <div class="flex items-center gap-1.5 mb-1">
+                <span
+                  v-if="summaryStore.getSummary(email.id) === 'processing'"
+                  class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md"
+                  :class="darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-400'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse inline-block" />
+                  Analyzing
+                </span>
+                <template v-else-if="summaryStore.getSummary(email.id) && summaryStore.getSummary(email.id) !== 'error'">
+                  <span
+                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.email_category"
+                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                    :class="darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'"
+                  >
+                    {{ (summaryStore.getSummary(email.id) as DifySummary)?.email_category?.toLowerCase() }}
+                  </span>
+                  <span
+                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.importance?.level"
+                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                    :class="{
+                      'bg-red-100 text-red-500':    (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
+                      'bg-yellow-100 text-yellow-600': (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
+                      'bg-green-100 text-green-600':  (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
+                    }"
+                  >
+                    {{ (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level }}
+                  </span>
+                  <span
+                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.is_spam"
+                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-500"
+                  >
+                    Spam
+                  </span>
+                </template>
               </div>
               <div
                 v-if="email.attachments && email.attachments.length > 0"

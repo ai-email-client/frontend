@@ -175,8 +175,6 @@ watch(() => route.params.code, () => {
           </div>
         </header>
 
-        <!-- 🟢 2. วาง EmailComposer แบบไม่ต้องมี div class fixed ครอบ 
-             เพราะใน EmailComposer.vue มีคลาส fixed จัดการตำแหน่งตัวเองให้สวยงามอยู่แล้ว -->
         <EmailComposer v-if="showLayout" />
 
         <router-view

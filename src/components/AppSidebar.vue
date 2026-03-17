@@ -71,11 +71,6 @@ const menuItems = ref<CategoryMenuItem[]>([
     label: 'Spam',
     to: '/spam',
     badge: 0,
-    isOpen: false,
-    children: Object.values(SpamType).map((spamType) => ({
-      label: formatLabel(spamType),
-      to: `/spam/${spamType.toLowerCase()}`
-    }))
   },
   {
     icon: FileText,
