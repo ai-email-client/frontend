@@ -1,18 +1,35 @@
-# Vue 3 + TypeScript + Vite
+## 🛠️ การติดตั้งและการใช้งาน (Installation & Setup)
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+**ข้อกำหนดเบื้องต้น (Prerequisites):**
+- Node.js (แนะนำเวอร์ชัน LTS ล่าสุด)
+- npm หรือ yarn
 
-## Recommended IDE Setup
+**ขั้นตอนการติดตั้ง:**
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+**โคลนโปรเจกต์และเข้าไปที่โฟลเดอร์ของ Frontend ไปยังพื้นที่ต้องการด้วยคำสั่ง:**
+```bash
+git clone <repository-url>
+cd ai-email-client/frontend
+```
 
-## Type Support For `.vue` Imports in TS
+**ติดตั้ง Dependencies:**
+ทำการติดตั้งไลบรารีที่จำเป็นทั้งหมด (เช่น Vue, Pinia, Electron, TailwindCSS)
+```bash
+npm install
+```
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+**ตั้งค่า Environment Variables:**
+คัดลอกไฟล์ `.env.example` เป็นไฟล์ `.env` และแก้ไขค่าตามที่จำเป็น
+```bash
+VITE_API_URL="http://localhost:8000"
+```
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+**รัน Development Server:**
+```bash
+npm run dev
+```
 
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+**Build สำหรับ Production:**
+```bash
+npm run build
+```
