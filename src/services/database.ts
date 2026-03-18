@@ -1,5 +1,5 @@
 import databaseAPI from "../api/database"
-import { EmailAnalysisResponse, OverviewResponse } from "../interface/response"
+import { EmailAnalysisResponse, OverviewResponse, SpamResponse } from "../interface/response"
 
 const databaseService = {
     async get_summary(msg_id: string): Promise<EmailAnalysisResponse> {
@@ -24,6 +24,10 @@ const databaseService = {
     },
     async get_overview(): Promise<OverviewResponse[]> {
         const response = await databaseAPI.get_overview()
+        return response
+    },
+    async get_spam(): Promise<SpamResponse[]> {
+        const response = await databaseAPI.get_spam()
         return response
     }
 }

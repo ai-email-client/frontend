@@ -97,7 +97,9 @@ onMounted(async () => {
   
   await router.isReady()
   await currentUser()
-  await labelStore.getLabels()
+  if (labelStore.rawLabels.length === 0) {
+    await labelStore.getLabels()
+  }
 })
 
 watch(

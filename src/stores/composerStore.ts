@@ -21,13 +21,21 @@ export interface DraftState {
 
 const joinRecipients = (list: Sender[] | string | null | undefined): string => {
   if (!list) return ''
-  if (typeof list === 'string') return list
+  if (typeof list === 'string') {
+    return list
+      .split(/[,;]/)
+      .map(s => {
+        const match = s.match(/<([^>]+)>/)
+        return match ? match[1].trim() : s.trim()
+      })
+      .filter(Boolean)
+      .join(', ')
+  }
   return list
     .map(r => r.email?.trim())
     .filter(Boolean)
     .join(', ')
 }
-
 export const useComposerStore = defineStore('composer', () => {
   const activeComposer = ref<DraftState | null>(null)
   const lastUpdated = ref<number>(0)
@@ -79,9 +87,9 @@ export const useComposerStore = defineStore('composer', () => {
         references = originalEmail.references || null
 
       } else if (type === 'edit') {
-        initialTo   = joinRecipients(originalEmail.to)
-        initialCc   = joinRecipients(originalEmail.cc)
-        initialBcc  = joinRecipients(originalEmail.bcc)
+        initialTo      = joinRecipients(originalEmail.to)
+        initialCc      = joinRecipients(originalEmail.cc)
+        initialBcc     = joinRecipients(originalEmail.bcc)
         initialSubject = subject || ''
 
         inReplyTo  = originalEmail.in_reply_to || null
@@ -93,18 +101,14 @@ export const useComposerStore = defineStore('composer', () => {
 
         const match = fullHtml.match(quoteRegex)
 
+        const toPlainText = (html: string) =>
+          html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim()
+
         if (match && match.index !== undefined) {
-          const splitIndex = match.index
-          initialBody = fullHtml.substring(0, splitIndex)
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<[^>]*>/g, '')
-            .trim()
-          initialQuotedBody = fullHtml.substring(splitIndex)
+          initialBody       = toPlainText(fullHtml.substring(0, match.index))
+          initialQuotedBody = fullHtml.substring(match.index)
         } else {
-          initialBody = fullHtml
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<[^>]*>/g, '')
-            .trim()
+          initialBody       = toPlainText(fullHtml)
           initialQuotedBody = null
         }
       }

@@ -1,9 +1,7 @@
 import { app, BrowserWindow } from 'electron'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
-const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
@@ -24,10 +22,10 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
-let win: BrowserWindow | null
+let win: BrowserWindow | null = null
 
 function createWindow() {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 1200,
     height: 800,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
@@ -38,7 +36,7 @@ function createWindow() {
   })
 
   win.webContents.on('did-finish-load', () => {
-    win.webContents.send('main-process-message', (new Date).toLocaleString())
+    win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
   win.maximize()
   win.show()

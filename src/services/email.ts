@@ -242,6 +242,17 @@ const emailService = {
             throw err
         }
     },
+    getDraftById: async (
+        draftId: string
+    ): Promise<Draft> => {
+        try {
+            const data = await emailAPI.get_draft(draftId)
+            return data
+        } catch (err) {
+            console.error('Fetch error:', err)
+            throw err
+        }
+    },
     getAttachment: async (
         msgId: string,
         attachmentId: string

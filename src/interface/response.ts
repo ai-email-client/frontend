@@ -163,3 +163,16 @@ export interface OverviewResponse {
     reason: string
   } | null
 }
+
+export interface SpamResponse {
+    msg_id: string
+    source_email_id: string
+    sender: Sender
+    summary: string
+    is_spam: boolean
+    is_threat: boolean
+    spam_type: string | null
+    spam_confidence: number
+    security_type: string | null
+    security_confidence: number
+}

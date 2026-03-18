@@ -1,5 +1,5 @@
 import api from './api'
-import { EmailAnalysisResponse, OverviewResponse } from '../interface/response'
+import { EmailAnalysisResponse, OverviewResponse, SpamResponse } from '../interface/response'
 
 export default {
     async get_summary(msg_id: string): Promise<EmailAnalysisResponse> {
@@ -52,6 +52,15 @@ export default {
             return response.data
         } catch (error) {
             console.error('Failed to get overview:', error)
+            return []
+        }
+    },
+    async get_spam(): Promise<SpamResponse[]> {
+        try {
+            const response = await api.get('/database/spam')
+            return response.data
+        } catch (error) {
+            console.error('Failed to get spam:', error)
             return []
         }
     }

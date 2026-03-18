@@ -85,8 +85,19 @@ const prevPage = async () => {
 }
 
 
-const handleSelectEmail = (draft: Draft) => {
-  composerStore.openComposer('edit', draft.id, draft.message)
+const handleSelectEmail = async (email: Message) => {
+  try {
+    uiStore.setLoading(true)
+    const draft = draftList.value.find(d => d.message?.id === email.id)
+    if (!draft) return
+
+    const fullDraft = await emailService.getDraftById(draft.id)
+    composerStore.openComposer('edit', fullDraft.id, fullDraft.message)
+  } catch (error) {
+    console.error('Failed to fetch draft', error)
+  } finally {
+    uiStore.setLoading(false)
+  }
 }
 
 const handleDrag = (clientX: number) => {

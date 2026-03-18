@@ -194,7 +194,6 @@ const fetchEmails = async (pageToken = '') => {
 
 const fetchOverview = async (msgs: Message[]) => {
   if (!msgs.length) return
-  msgs.forEach(e => summaryStore.setSummary(e.id, 'processing'))
 
   try {
     const res: OverviewResponse[] = await databaseService.get_overview()

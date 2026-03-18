@@ -241,6 +241,14 @@ export default {
             throw error
         }
     },
+    async get_draft(draftId: string) {
+        try {
+            const response = await api.get<Draft>(`/email/draft/${draftId}`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    },
     async get_attachment(msgId: string, attachmentId: string) {
         try {
             const response = await api.get<AttachmentData>(`/email/message/${msgId}/attachment/${attachmentId}`)

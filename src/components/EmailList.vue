@@ -209,7 +209,15 @@ const emit = defineEmits([
                         ? (email.labelIds?.includes('UNREAD') ? 'text-gray-100' : 'text-gray-400')
                         : (email.labelIds?.includes('UNREAD') ? 'text-black' : 'text-gray-500')
                     ]"
-                  >{{ email.sender?.name }}
+                  >  <template v-if="email.labelIds?.includes('DRAFT')">
+                      To: {{ Array.isArray(email.to)
+                        ? email.to.map((r: any) => r.name || r.email).join(', ')
+                        : email.to || '(No recipient)'
+                      }}
+                    </template>
+                    <template v-else>
+                      {{ email.sender?.name || email.sender?.email || '(Unknown)' }}
+                    </template>
                   </h3>
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
@@ -219,7 +227,7 @@ const emit = defineEmits([
                         color: labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.textColor
                       }"
                     >
-                      <Tag class="w-3 h-3 opacity-70" />
+                      <Tag class="w-3 h-3 opacity-70" v-if="!email.labelIds?.includes('DRAFT') && !email.labelIds?.includes('SENT')"/>
                       <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.name }}</span>
                     </span>
                   </div>

@@ -310,7 +310,12 @@ watch(
     lastSavedAt.value = null
     lastSavedContent.value = ''
     saveError.value = null
-    existingAttachments.value = []
+
+    if (newComposer.type === 'edit' && newComposer.message?.attachments?.length) {
+      existingAttachments.value = newComposer.message.attachments
+    } else {
+      existingAttachments.value = []
+    }
   },
   { immediate: true }
 )

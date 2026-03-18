@@ -4,19 +4,18 @@ import {
   ShieldAlert, ShieldCheck, ShieldX,
   AlertTriangle, RotateCw, Trash2,
   Mail, Clock, Tag, TrendingUp,
-  ChevronLeft, ChevronRight, Badge, 
+  ChevronLeft, ChevronRight, Badge,
   Flag
 } from 'lucide-vue-next'
 import { formatTimeAgo, getFirstCharacter } from '../utils'
 import emailService from '../services/email'
-import { useSummaryStore } from '../stores/summaryStore'
 import { useUiStore } from '../stores/uiStore'
-import difyService from '../services/dify'
 import { Message } from '../interface/email'
-import { DifySummary } from '../interface/dify'
 import EmailShadow from '../components/EmailShadow.vue'
 import Divider from '../components/Divider.vue'
 import { SpamType } from '../interface/spam'
+import databaseService from '../services/database'
+import { SpamResponse } from '../interface/response'
 
 const props = defineProps<{
   darkMode: boolean
@@ -25,18 +24,19 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:listWidth'])
 
-const summaryStore = useSummaryStore()
-const uiStore      = useUiStore()
+const uiStore = useUiStore()
 
 const emails        = ref<Message[]>([])
 const selectedEmail = ref<Message | null>(null)
 const activeFilter  = ref('all')
+const spams         = ref<SpamResponse[]>([])
+const spamTypeValues = Object.values(SpamType).map(v => v.toLowerCase())
 
 const label           = ['SPAM']
 const limit           = 10
 const query           = ''
 const format          = 'full'
-const metadataHeaders : string[] = []
+const metadataHeaders: string[] = []
 
 const nextPageToken = ref<string | null>(null)
 const stackToken    = ref<string[]>([''])
@@ -64,51 +64,53 @@ const handleDrag = (clientX: number) => {
     : Math.min(Math.max(raw, MIN_PX), Math.min(MAX_PX, width * 0.75))
 }
 const handleCollapse = () => { currentWidth.value = MIN_PX }
-const handleExpand   = () => { currentWidth.value = 360    }
+const handleExpand   = () => { currentWidth.value = 360 }
 
 const filters = [
-  { key: 'all',                   label: 'All',                     icon: ShieldAlert   },
-  { key: SpamType.PHISHING,       label: SpamType.PHISHING,         icon: ShieldX       },
-  { key: SpamType.SPAM_MARKETING, label: SpamType.SPAM_MARKETING,   icon: Flag          },
-  { key: SpamType.PROMOTIONAL,    label: SpamType.PROMOTIONAL,      icon: TrendingUp    },
-  { key: SpamType.BULK,           label: SpamType.BULK,             icon: Badge         },
-  { key: SpamType.OTHER,          label: SpamType.OTHER,            icon: Mail          },
-  { key: 'threat',                label: 'Threats',                 icon: AlertTriangle },
+  { key: 'all',                                 label: 'All',                   icon: ShieldAlert  },
+  { key: SpamType.PHISHING.toLowerCase(),       label: SpamType.PHISHING,       icon: ShieldX      },
+  { key: SpamType.SPAM_MARKETING.toLowerCase(), label: SpamType.SPAM_MARKETING, icon: Flag         },
+  { key: SpamType.PROMOTIONAL.toLowerCase(),    label: SpamType.PROMOTIONAL,    icon: TrendingUp   },
+  { key: SpamType.BULK.toLowerCase(),           label: SpamType.BULK,           icon: Badge        },
+  { key: SpamType.OTHER.toLowerCase(),          label: SpamType.OTHER,          icon: Mail         },
+  { key: 'threat',                              label: 'Threats',               icon: AlertTriangle},
 ]
 
-const selectedSummary = computed((): DifySummary | null => {
+const getSpamData = (emailId: string): SpamResponse | null => {
+  return spams.value.find(s => s.msg_id === emailId) ?? null
+}
+
+const selectedSpam = computed((): SpamResponse | null => {
   if (!selectedEmail.value) return null
-  const s = summaryStore.getSummary(selectedEmail.value.id)
-  if (!s || s === 'processing' || s === 'error') return null
-  return s as DifySummary
+  return getSpamData(selectedEmail.value.id)
 })
 
 const filteredEmails = computed(() => {
+  if (activeFilter.value === 'all') return emails.value
+
   return emails.value.filter(email => {
-    if (activeFilter.value === 'all') return true
-    const s = summaryStore.getSummary(email.id)
-    if (!s || s === 'processing' || s === 'error') return false
-    const summary = s as DifySummary
-    if (activeFilter.value === SpamType.PHISHING)       return summary.spam_type === SpamType.PHISHING
-    if (activeFilter.value === SpamType.SPAM_MARKETING) return summary.spam_type === SpamType.SPAM_MARKETING
-    if (activeFilter.value === SpamType.PROMOTIONAL)    return summary.spam_type === SpamType.PROMOTIONAL
-    if (activeFilter.value === 'threat')         return summary.is_threat === true
-    return true
+    const spam = getSpamData(email.id)
+    if (!spam) return false
+
+    if (activeFilter.value === 'threat') return spam.is_threat === true
+
+    if (activeFilter.value === SpamType.OTHER.toLowerCase()) {
+      return spam.spam_type && !spamTypeValues.includes(spam.spam_type.toLowerCase())
+    }
+
+    return spam.spam_type?.toLowerCase() === activeFilter.value.toLowerCase()
   })
 })
 
-const stats = computed(() => {
-  const summaries = emails.value
-    .map(e => summaryStore.getSummary(e.id))
-    .filter(s => s && s !== 'processing' && s !== 'error') as DifySummary[]
-  return {
-    total:       totalMessage.value,
-    phishing:    summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase()).length,
-    marketing:   summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()).length,
-    promotional: summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase()).length,
-    threats:     summaries.filter(s => s.is_threat).length,
-  }
-})
+const stats = computed(() => ({
+  total:       totalMessage.value,
+  phishing:    spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase()).length,
+  marketing:   spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()).length,
+  promotional: spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase()).length,
+  bulk:        spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.BULK.toLowerCase()).length,
+  other:       spams.value.filter(s => s.spam_type && !spamTypeValues.includes(s.spam_type.toLowerCase())).length,
+  threats:     spams.value.filter(s => s.is_threat).length,
+}))
 
 const totalPages = computed(() => Math.ceil(totalMessage.value / limit) || 1)
 const canPrev    = computed(() => currentPage.value > 0)
@@ -116,12 +118,14 @@ const canNext    = computed(() =>
   currentPage.value < stackToken.value.length - 1 || !!nextPageToken.value
 )
 
-const getSpamBadge = (summary: DifySummary | null) => {
-  if (!summary) return null
-  if (summary.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase())       return { label: 'Phishing',    color: 'red'    }
-  if (summary.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()) return { label: 'Marketing',   color: 'amber'  }
-  if (summary.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase())    return { label: 'Promotional', color: 'green'  }
-  if (summary.is_threat)                      return { label: 'Threat',      color: 'orange' }
+const getSpamBadge = (spam: SpamResponse | null) => {
+  if (!spam) return null
+  if (spam.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase())       return { label: 'Phishing',    color: 'red'    }
+  if (spam.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()) return { label: 'Marketing',   color: 'amber'  }
+  if (spam.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase())    return { label: 'Promotional', color: 'green'  }
+  if (spam.spam_type?.toLowerCase() === SpamType.BULK.toLowerCase())           return { label: 'Bulk',        color: 'blue'   }
+  if (spam.spam_type && !spamTypeValues.includes(spam.spam_type.toLowerCase())) return { label: 'Other',       color: 'gray'   }
+  if (spam.is_threat)                                                          return { label: 'Threat',      color: 'orange' }
   return { label: 'Spam', color: 'gray' }
 }
 
@@ -132,6 +136,7 @@ const badgeClass = (color: string) => {
     amber:  dark ? 'bg-amber-900/30 text-amber-400 border-amber-700/30'    : 'bg-amber-50 text-amber-600 border-amber-200',
     orange: dark ? 'bg-orange-900/30 text-orange-400 border-orange-700/30' : 'bg-orange-50 text-orange-600 border-orange-200',
     green:  dark ? 'bg-green-900/30 text-green-400 border-green-700/30'    : 'bg-green-50 text-green-600 border-green-200',
+    blue:   dark ? 'bg-blue-900/30 text-blue-400 border-blue-700/30'       : 'bg-blue-50 text-blue-600 border-blue-200',
     gray:   dark ? 'bg-gray-700 text-gray-400 border-gray-600'             : 'bg-gray-100 text-gray-500 border-gray-200',
   }
   return map[color] ?? map.gray
@@ -144,12 +149,12 @@ const confidenceColor = (val?: number | null) => {
   return 'text-green-500'
 }
 
-
 const fetchEmails = async (pageToken = '') => {
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
-    getTotalMessage()
+    await getTotalMessage()
+
     const response = await emailService.fetchEmails(
       label, limit, pageToken, query, true, format, metadataHeaders
     )
@@ -157,41 +162,16 @@ const fetchEmails = async (pageToken = '') => {
     if (response.nextPageToken && !stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-    summaryStore.pruneByIds(response.messages.map(e => e.id))
+
     emails.value = response.messages
-    fetchSummary(response.messages)
+
+    const res = await databaseService.get_spam()
+    spams.value = res ?? []
   } catch (error) {
     console.error('fetchEmails error:', error)
   } finally {
     uiStore.setLoading(false)
   }
-}
-
-const fetchSummary = (emails: Message[]) => {
-  emails.forEach(e => summaryStore.setSummary(e.id, 'processing'))
-
-  difyService.getSummaryBatch({ 
-    emails: emails.map(e => ({ 
-      msg_id: e.id, 
-      email_tags: e.labelIds || [],
-      sender: e.sender?.email || '',
-      text_plain: e.text_plain || e.text_html || ''
-    }))
-  })
-    .then(res => {
-      res.forEach((item: DifySummary) => {
-        if (item.status === 'done') {
-          summaryStore.setSummary(item.msg_id!, item)
-        } else if (item.status === 'error') {
-          summaryStore.setSummary(item.msg_id!, 'error')
-        } else {
-          summaryStore.setSummary(item.msg_id!, 'processing')
-        }
-      })
-    })
-    .catch(() => {
-      emails.forEach(e => summaryStore.setSummary(e.id, 'error'))
-    })
 }
 
 const nextPage = async () => {
@@ -218,6 +198,8 @@ const handleDelete = async (email: Message) => {
     uiStore.setLoading(true)
     await emailService.deleteMessage(email.id)
     emails.value = emails.value.filter(e => e.id !== email.id)
+    spams.value  = spams.value.filter(s => s.msg_id !== email.id)
+    if (selectedEmail.value?.id === email.id) selectedEmail.value = null
   } catch (error) {
     console.error('Failed to delete email', error)
   } finally {
@@ -234,6 +216,7 @@ onMounted(() => {
   <div class="h-full flex flex-col overflow-hidden"
     :class="darkMode ? 'bg-gray-900' : 'bg-gray-50'">
 
+    <!-- Header -->
     <div class="shrink-0 px-6 py-4 border-b"
       :class="darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'">
 
@@ -259,12 +242,15 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="grid grid-cols-5 gap-2 mb-4">
+      <!-- Stats -->
+      <div class="grid grid-cols-7 gap-2 mb-4">
         <div v-for="stat in [
           { label: 'Total',     value: stats.total,       color: 'text-gray-500'   },
           { label: 'Phishing',  value: stats.phishing,    color: 'text-red-500'    },
           { label: 'Marketing', value: stats.marketing,   color: 'text-amber-500'  },
           { label: 'Promo',     value: stats.promotional, color: 'text-green-500'  },
+          { label: 'Bulk',      value: stats.bulk,        color: 'text-blue-500'   },
+          { label: 'Other',     value: stats.other,       color: 'text-gray-500'   },
           { label: 'Threats',   value: stats.threats,     color: 'text-orange-500' },
         ]" :key="stat.label"
           class="rounded-xl p-2.5 text-center border"
@@ -280,7 +266,7 @@ onMounted(() => {
         <button v-for="f in filters" :key="f.key"
           @click="activeFilter = f.key; selectedEmail = null"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border"
-          :class="activeFilter === f.key
+          :class="activeFilter.toLowerCase() === f.key.toLowerCase()
             ? (darkMode ? 'bg-red-900/30 text-red-400 border-red-700/40' : 'bg-red-50 text-red-600 border-red-200')
             : (darkMode ? 'text-gray-500 border-gray-700/40 hover:bg-gray-800' : 'text-gray-400 border-gray-200 hover:bg-gray-50')">
           <component :is="f.icon" :size="12" />
@@ -290,7 +276,6 @@ onMounted(() => {
     </div>
 
     <div ref="containerRef" class="flex flex-1 overflow-hidden">
-
       <div
         :style="{ width: `${currentWidth}px`, minWidth: `${MIN_PX}px`, flexShrink: 0 }"
         class="flex-col overflow-hidden transition-none"
@@ -356,24 +341,18 @@ onMounted(() => {
                   {{ email.subject }}
                 </p>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span v-if="summaryStore.getSummary(email.id) === 'processing'"
-                    class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md"
-                    :class="darkMode ? 'bg-gray-700 text-gray-500' : 'bg-gray-100 text-gray-400'">
-                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse inline-block" />
-                    Analyzing
-                  </span>
-                  <template v-else-if="summaryStore.getSummary(email.id) && summaryStore.getSummary(email.id) !== 'error'">
+                  <template v-if="getSpamData(email.id)">
                     <span
-                      v-if="getSpamBadge(summaryStore.getSummary(email.id) as DifySummary)"
+                      v-if="getSpamBadge(getSpamData(email.id))"
                       class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border"
-                      :class="badgeClass(getSpamBadge(summaryStore.getSummary(email.id) as DifySummary)!.color)">
-                      {{ getSpamBadge(summaryStore.getSummary(email.id) as DifySummary)?.label }}
+                      :class="badgeClass(getSpamBadge(getSpamData(email.id))!.color)">
+                      {{ getSpamBadge(getSpamData(email.id))?.label }}
                     </span>
                     <span class="text-[10px] font-mono font-bold"
-                      :class="confidenceColor((summaryStore.getSummary(email.id) as DifySummary)?.spam_confidence)">
-                      {{ (summaryStore.getSummary(email.id) as DifySummary)?.spam_confidence?.toFixed(0) }}%
+                      :class="confidenceColor(getSpamData(email.id)?.spam_confidence)">
+                      {{ getSpamData(email.id)?.spam_confidence?.toFixed(0) }}%
                     </span>
-                    <span v-if="(summaryStore.getSummary(email.id) as DifySummary)?.is_threat"
+                    <span v-if="getSpamData(email.id)?.is_threat"
                       class="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md border"
                       :class="darkMode ? 'bg-orange-900/30 text-orange-400 border-orange-700/30' : 'bg-orange-50 text-orange-600 border-orange-200'">
                       <AlertTriangle :size="9" /> Threat
@@ -419,7 +398,7 @@ onMounted(() => {
             {{ selectedEmail.subject }}
           </h2>
 
-          <div v-if="selectedSummary"
+          <div v-if="selectedSpam"
             class="rounded-2xl border overflow-hidden"
             :class="darkMode ? 'bg-gray-800/50 border-red-700/30' : 'bg-white border-red-100 shadow-sm'">
 
@@ -432,12 +411,12 @@ onMounted(() => {
                 </span>
               </div>
               <div class="flex items-center gap-2">
-                <span v-if="getSpamBadge(selectedSummary)"
+                <span v-if="getSpamBadge(selectedSpam)"
                   class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                  :class="badgeClass(getSpamBadge(selectedSummary)!.color)">
-                  {{ getSpamBadge(selectedSummary)?.label }}
+                  :class="badgeClass(getSpamBadge(selectedSpam)!.color)">
+                  {{ getSpamBadge(selectedSpam)?.label }}
                 </span>
-                <span v-if="selectedSummary.is_threat"
+                <span v-if="selectedSpam.is_threat"
                   class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border"
                   :class="darkMode ? 'bg-orange-900/30 text-orange-400 border-orange-700/30' : 'bg-orange-50 text-orange-600 border-orange-200'">
                   <AlertTriangle :size="10" /> Threat Detected
@@ -446,16 +425,16 @@ onMounted(() => {
             </div>
 
             <div class="px-4 py-4 space-y-4">
-              <p v-if="selectedSummary.summary"
+              <p v-if="selectedSpam.summary"
                 class="text-sm leading-relaxed"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                {{ selectedSummary.summary }}
+                {{ selectedSpam.summary }}
               </p>
 
               <div class="grid grid-cols-2 gap-3">
                 <div v-for="meter in [
-                  { label: 'Spam Confidence',     value: selectedSummary.spam_confidence     },
-                  { label: 'Security Confidence', value: selectedSummary.security_confidence },
+                  { label: 'Spam Confidence',     value: selectedSpam.spam_confidence     },
+                  { label: 'Security Confidence', value: selectedSpam.security_confidence },
                 ]" :key="meter.label"
                   class="rounded-xl p-3 border"
                   :class="darkMode ? 'bg-gray-800 border-gray-700/40' : 'bg-gray-50 border-gray-100'">
@@ -476,17 +455,17 @@ onMounted(() => {
               </div>
 
               <div class="flex flex-wrap gap-2">
-                <div v-if="selectedSummary.spam_type"
+                <div v-if="selectedSpam.spam_type"
                   class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border"
                   :class="darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-200 text-gray-600'">
                   <Tag :size="12" class="text-red-400" />
-                  Spam: <span class="font-semibold">{{ selectedSummary.spam_type }}</span>
+                  Spam: <span class="font-semibold">{{ selectedSpam.spam_type }}</span>
                 </div>
-                <div v-if="selectedSummary.security_type"
+                <div v-if="selectedSpam.security_type"
                   class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border"
                   :class="darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-200 text-gray-600'">
                   <ShieldAlert :size="12" class="text-orange-400" />
-                  Security: <span class="font-semibold">{{ selectedSummary.security_type }}</span>
+                  Security: <span class="font-semibold">{{ selectedSpam.security_type }}</span>
                 </div>
               </div>
             </div>
