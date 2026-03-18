@@ -1,5 +1,5 @@
 import api from './api'
-import { EmailAnalysisResponse } from '../interface/response'
+import { EmailAnalysisResponse, OverviewResponse } from '../interface/response'
 
 export default {
     async get_summary(msg_id: string): Promise<EmailAnalysisResponse> {
@@ -44,6 +44,15 @@ export default {
         } catch (error) {
             console.error('Failed to get source email:', error)
             return null
+        }
+    },
+    async get_overview(): Promise<OverviewResponse[]> {
+        try {
+            const response = await api.get('/database/overview')
+            return response.data
+        } catch (error) {
+            console.error('Failed to get overview:', error)
+            return []
         }
     }
 

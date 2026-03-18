@@ -84,12 +84,11 @@ const handleLogout = () => {
   uiStore.setLoading(false)
 }
 
-onMounted(async () => {
-  const navEntries = window.performance.getEntriesByType("navigation")
-  
-  if (navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === "reload") {
-    await handleAuthCheck()
-    router.replace('/inbox') 
+onMounted(async () => {  
+  if (window.electronAPI) {
+    window.electronAPI.onOAuthCallback(async (code: string) => {
+      await router.push(`/callback?code=${code}`)
+    })
   }
 
   if (route.name === 'Inbox') {

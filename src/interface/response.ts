@@ -147,3 +147,19 @@ export interface DraftsResponse {
   nextPageToken: string;
   resultSizeEstimate: number;
 }
+
+export interface OverviewResponse {
+  msg_id:          string
+  source_email_id: string
+  sender: {
+    email: string | null
+    name:  string
+    type:  string
+  } | null
+  email_category: string | null
+  summary:        string | null
+  importance: {
+    level:  string
+    reason: string
+  } | null
+}

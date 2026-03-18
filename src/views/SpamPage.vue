@@ -4,7 +4,8 @@ import {
   ShieldAlert, ShieldCheck, ShieldX,
   AlertTriangle, RotateCw, Trash2,
   Mail, Clock, Tag, TrendingUp,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Badge, 
+  Flag
 } from 'lucide-vue-next'
 import { formatTimeAgo, getFirstCharacter } from '../utils'
 import emailService from '../services/email'
@@ -15,6 +16,7 @@ import { Message } from '../interface/email'
 import { DifySummary } from '../interface/dify'
 import EmailShadow from '../components/EmailShadow.vue'
 import Divider from '../components/Divider.vue'
+import { SpamType } from '../interface/spam'
 
 const props = defineProps<{
   darkMode: boolean
@@ -51,7 +53,6 @@ const currentWidth = computed({
   set: (val) => emit('update:listWidth', val),
 })
 
-const collapsed  = computed(() => currentWidth.value <= MIN_PX + 4)
 const showViewer = computed(() => selectedEmail.value !== null)
 
 const handleDrag = (clientX: number) => {
@@ -66,11 +67,13 @@ const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 360    }
 
 const filters = [
-  { key: 'all',            label: 'All',         icon: ShieldAlert   },
-  { key: 'phishing',       label: 'Phishing',    icon: ShieldX       },
-  { key: 'spam_marketing', label: 'Marketing',   icon: TrendingUp    },
-  { key: 'promotional',    label: 'Promotional', icon: Mail          },
-  { key: 'threat',         label: 'Threats',     icon: AlertTriangle },
+  { key: 'all',                   label: 'All',                     icon: ShieldAlert   },
+  { key: SpamType.PHISHING,       label: SpamType.PHISHING,         icon: ShieldX       },
+  { key: SpamType.SPAM_MARKETING, label: SpamType.SPAM_MARKETING,   icon: Flag          },
+  { key: SpamType.PROMOTIONAL,    label: SpamType.PROMOTIONAL,      icon: TrendingUp    },
+  { key: SpamType.BULK,           label: SpamType.BULK,             icon: Badge         },
+  { key: SpamType.OTHER,          label: SpamType.OTHER,            icon: Mail          },
+  { key: 'threat',                label: 'Threats',                 icon: AlertTriangle },
 ]
 
 const selectedSummary = computed((): DifySummary | null => {
@@ -86,9 +89,9 @@ const filteredEmails = computed(() => {
     const s = summaryStore.getSummary(email.id)
     if (!s || s === 'processing' || s === 'error') return false
     const summary = s as DifySummary
-    if (activeFilter.value === 'phishing')       return summary.spam_type === 'phishing'
-    if (activeFilter.value === 'spam_marketing') return summary.spam_type === 'spam_marketing'
-    if (activeFilter.value === 'promotional')    return summary.spam_type === 'promotional'
+    if (activeFilter.value === SpamType.PHISHING)       return summary.spam_type === SpamType.PHISHING
+    if (activeFilter.value === SpamType.SPAM_MARKETING) return summary.spam_type === SpamType.SPAM_MARKETING
+    if (activeFilter.value === SpamType.PROMOTIONAL)    return summary.spam_type === SpamType.PROMOTIONAL
     if (activeFilter.value === 'threat')         return summary.is_threat === true
     return true
   })
@@ -100,9 +103,9 @@ const stats = computed(() => {
     .filter(s => s && s !== 'processing' && s !== 'error') as DifySummary[]
   return {
     total:       totalMessage.value,
-    phishing:    summaries.filter(s => s.spam_type === 'phishing').length,
-    marketing:   summaries.filter(s => s.spam_type === 'spam_marketing').length,
-    promotional: summaries.filter(s => s.spam_type === 'promotional').length,
+    phishing:    summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase()).length,
+    marketing:   summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()).length,
+    promotional: summaries.filter(s => s.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase()).length,
     threats:     summaries.filter(s => s.is_threat).length,
   }
 })
@@ -115,9 +118,9 @@ const canNext    = computed(() =>
 
 const getSpamBadge = (summary: DifySummary | null) => {
   if (!summary) return null
-  if (summary.spam_type === 'phishing')       return { label: 'Phishing',    color: 'red'    }
-  if (summary.spam_type === 'spam_marketing') return { label: 'Marketing',   color: 'amber'  }
-  if (summary.spam_type === 'promotional')    return { label: 'Promotional', color: 'green'  }
+  if (summary.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase())       return { label: 'Phishing',    color: 'red'    }
+  if (summary.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()) return { label: 'Marketing',   color: 'amber'  }
+  if (summary.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase())    return { label: 'Promotional', color: 'green'  }
   if (summary.is_threat)                      return { label: 'Threat',      color: 'orange' }
   return { label: 'Spam', color: 'gray' }
 }

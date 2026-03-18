@@ -1,6 +1,4 @@
-import { createRouter, createWebHashHistory, useRoute } from 'vue-router'
-
-import LoginPage from '../views/LoginPage.vue'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 
 const routes = [
@@ -12,12 +10,12 @@ const routes = [
     {
         path: '/login',
         name: 'Login',
-        component: LoginPage
+        component: () => import('../views/LoginPage.vue')
     },
     {
     path: '/inbox',
     name: 'Inbox',
-    component: () => import('../views/MailboxPage.vue'),
+    component: () => import('../views/MailboxDifyPage.vue'),
     meta: { labels: ['INBOX'], includeSpamTrash: false }
     },
     {
@@ -29,12 +27,12 @@ const routes = [
         path: '/sent',
         name: 'Sent',
         component: () => import('../views/MailboxPage.vue'),
-        meta: { labels: ['SENT'], includeSpamTrash: false }
+        meta: { labels: ['SENT'], includeSpamTrash: true }
     },
     {
         path: '/category/:category',
         name: 'Category',
-        component: () => import('../views/MailboxPage.vue'),
+        component: () => import('../views/MailboxDifyPage.vue'),
         meta: { includeSpamTrash: false }
     },
     {
@@ -53,6 +51,11 @@ const routes = [
         path: '/callback',
         name: 'Callback',
         component: () => import('../views/Callback.vue')
+    },
+    {
+        path: '/overview',
+        name: 'Overview',
+        component: () => import('../views/OverviewPage.vue')
     }
 ]
 

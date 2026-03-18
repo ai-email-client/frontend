@@ -15,14 +15,11 @@ import type { UserProfile } from '../interface/user'
 
 
 import emailService from '../services/email'
-import difyService from '../services/dify'
 import { DifySummary } from '../interface/dify'
 import { Message } from '../interface/email'
 import { useUiStore } from '../stores/uiStore'
 import { useComposerStore } from '../stores/composerStore'
 import { useRoute } from 'vue-router'
-import { useLabelStore } from '../stores/categoryStore'
-import { useSummaryStore } from '../stores/summaryStore'
 
 const props = defineProps({
   user: {
@@ -43,8 +40,6 @@ const emit = defineEmits(['update:listWidth'])
 const route = useRoute()
 const uiStore = useUiStore()
 const composerStore = useComposerStore()
-const labelStore = useLabelStore()
-const summaryStore = useSummaryStore()
 
 // ── State ──
 const containerRef = ref<HTMLElement | null>(null)
@@ -71,22 +66,12 @@ const labels = computed(() => {
     if (route.meta.labels) {
         return route.meta.labels as string[]
     }
-    if (route.params.category) {
-        const labelId = labelStore.getLabelIdByName(route.params.category.toString());
-        return [labelId]
-    }
-    if (route.params.spamType) {
-        const labelId = labelStore.getLabelIdByName(route.params.spamType.toString());
-        return [labelId]
-    }
-    return ['INBOX']
+    return ['SENT']
 })
 
-const includeSpamTrash = computed(() =>
-  (route.meta.includeSpamTrash as boolean) ?? false
-)
-const limit             = 10
+const limit             = 20
 const query             = ''
+const includeSpamTrash  = false
 const format            = 'full'
 const metadataHeaders   : string[] = []
 
@@ -107,7 +92,7 @@ const fetchEmails = async (
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
-
+    getTotalMessage()
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
@@ -115,44 +100,13 @@ const fetchEmails = async (
     if (!stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-
-    summaryStore.pruneByIds(response.messages.map(e => e.id))
     emailList.value = response.messages
-
-    fetchSummary(response.messages)
 
   } catch (error) {
     console.error('Failed to fetch emails', error)
   } finally {
     uiStore.setLoading(false)
   }
-}
-
-const fetchSummary = (emails: Message[]) => {
-  emails.forEach(e => summaryStore.setSummary(e.id, 'processing'))
-
-  difyService.getSummaryBatch({ 
-    emails: emails.map(e => ({ 
-      msg_id: e.id, 
-      email_tags: e.labelIds || [],
-      sender: e.sender?.email || '',
-      text_plain: e.text_plain || e.text_html || ''
-    }))
-  })
-    .then(res => {
-      res.forEach((item: DifySummary) => {
-        if (item.status === 'done') {
-          summaryStore.setSummary(item.msg_id!, item)
-        } else if (item.status === 'error') {
-          summaryStore.setSummary(item.msg_id!, 'error')
-        } else {
-          summaryStore.setSummary(item.msg_id!, 'processing')
-        }
-      })
-    })
-    .catch(() => {
-      emails.forEach(e => summaryStore.setSummary(e.id, 'error'))
-    })
 }
 
 const nextPage = async () => {
@@ -164,7 +118,7 @@ const nextPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash.value,
+      includeSpamTrash,
       format,
       metadataHeaders
   )
@@ -179,7 +133,7 @@ const prevPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash.value,
+      includeSpamTrash,
       format,
       metadataHeaders
   )
@@ -226,32 +180,30 @@ const handleExpand   = () => { currentWidth.value = 450 }
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) {
-    getTotalMessage()
     fetchEmails(
       labels.value,
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash.value,
+      includeSpamTrash,
       format,
       metadataHeaders
     )
   }
+  getTotalMessage()
 })
 
 watch(
   () => route.fullPath,
   () => {
-  if (route.name !== 'sent') {
     stackToken.value = ['']
     currentPage.value = 0
     totalMessage.value = 1
     emailList.value = []
     selectedEmail.value = null
-    summaryStore.clearSummaries()
     getTotalMessage()
-    fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
-    }
+    fetchEmails(labels.value, limit, '', query, includeSpamTrash, format, metadataHeaders)
+    
   }
 )
 
@@ -314,7 +266,7 @@ watch(
         @reply-email="handleOpenReplyComposer"
         @forward-email="handleOpenForwardComposer"
       />
-      <div class="fixed w-[100%] bottom-0 right-10 z-50">
+      <div class="fixed w-[50%] bottom-0 right-10 z-50">
         <EmailComposer />
       </div>
     </div>

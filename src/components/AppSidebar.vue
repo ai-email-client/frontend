@@ -18,7 +18,6 @@ import { ref } from 'vue'
 
 import { CategoryMenuItem, CategoryEnum } from '../interface/category'
 import { formatLabel } from '../utils';
-import { SpamType } from '../interface/spam';
 import { LogOut } from 'lucide-vue-next'
 import { useRouter } from 'vue-router';
 import { useUiStore } from '../stores/uiStore';
