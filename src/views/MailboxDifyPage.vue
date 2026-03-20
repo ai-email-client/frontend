@@ -242,6 +242,7 @@ onMounted(() => {
 watch(
   () => route.fullPath,
   () => {
+    console.log('Route changed', labels.value)
     stackToken.value = ['']
     currentPage.value = 0
     totalMessage.value = 1

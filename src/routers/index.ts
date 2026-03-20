@@ -13,10 +13,10 @@ const routes = [
         component: () => import('../views/LoginPage.vue')
     },
     {
-    path: '/inbox',
-    name: 'Inbox',
-    component: () => import('../views/MailboxDifyPage.vue'),
-    meta: { labels: ['INBOX'], includeSpamTrash: false }
+        path: '/inbox',
+        name: 'Inbox',
+        component: () => import('../views/MailboxDifyPage.vue'),
+        meta: { labels: ['INBOX'], includeSpamTrash: false }
     },
     {
         path: '/draft',

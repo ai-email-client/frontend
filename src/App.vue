@@ -61,7 +61,7 @@ const handleAuthCheck = async () => {
     if (token) {
       router.replace('/inbox')
     } else {
-      uiStore.setLoading(false)
+      router.replace('/login')
     }
     return
   }
@@ -76,6 +76,9 @@ const currentUser = async () => {
   await handleAuthCheck()
   if (!isPublicPage.value) {
     userProfile.value = await userService.get_profile()
+    if (labelStore.rawLabels.length === 0) {
+      await labelStore.getLabels()
+    }
   }
 }
 
@@ -93,10 +96,6 @@ onMounted(async () => {
 
   await router.isReady()
   await currentUser()
-
-  if (!isPublicPage.value && labelStore.rawLabels.length === 0) {
-    await labelStore.getLabels()
-  }
 })
 
 watch(
