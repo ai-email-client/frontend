@@ -3,13 +3,13 @@ import {
   ref
 } from 'vue'
 
-import auth from '../api/auth'
+import authService from '../services/auth'
 
 const isLoading = ref(false)
 
 async function handleGoogleLogin() {
   isLoading.value = true
-  const response = await auth.loginByGoogle()
+  const response = await authService.login('gmail')
   window.location.href = response.url
 }
 

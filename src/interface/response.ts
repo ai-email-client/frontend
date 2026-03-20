@@ -2,6 +2,10 @@ import { DifySummary } from './dify';
 import { Attachment, Draft, Message, Payload, Sender } from './email';
 import { Category } from './category';
 
+export interface CallbackResponse {
+    token: string
+}
+
 export interface AttachmentResponse {
   mimeType: string;
   size: number;
@@ -140,6 +144,7 @@ export interface CategoryListResponse {
 }
 export interface LoginResponse {
   url: string
+  state: string
 }
 
 export interface DraftsResponse {

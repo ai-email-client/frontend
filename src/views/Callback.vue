@@ -1,39 +1,54 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import auth from '../services/auth'
 
 const route = useRoute()
 const router = useRouter()
 const statusMessage = ref('')
 const isError = ref(false)
 
+const saveTokenAndRedirect = (token: string) => {
+    localStorage.setItem('jwt_token', token)
+    statusMessage.value = 'Login Success'
+    setTimeout(() => router.replace('/inbox'), 3000)
+}
+
 onMounted(async () => {
+    const provider = (route.params.provider as string) ?? 'gmail'
 
     const token = route.query.token as string
-
     if (token) {
-        try {
-            localStorage.setItem('jwt_token', token)
-            statusMessage.value = 'Login Success'
-            setTimeout(() => {
-                router.replace('/inbox')
-            }, 3000)
+        saveTokenAndRedirect(token)
+        return
+    }
 
-        } catch (e) {
-            handleError('Login Failed')
+    const code = route.query.code as string
+    const state = route.query.state as string
+
+    if (!code) {
+        handleError('Login Failed: missing authorization code')
+        return
+    }
+
+    try {
+        const { token: fetchedToken } = await auth.handleCallback(provider, code, state)
+
+        if (!fetchedToken) {
+            handleError('Login Failed: no token received')
+            return
         }
-    } else {
+
+        saveTokenAndRedirect(fetchedToken)
+    } catch (e) {
         handleError('Login Failed')
     }
 })
 
 const handleError = (msg = '') => {
     isError.value = true
-    statusMessage.value = `${msg}`
-
-    setTimeout(() => {
-        router.replace('/login')
-    }, 2000)
+    statusMessage.value = msg
+    setTimeout(() => router.replace('/login'), 2000)
 }
 </script>
 

@@ -13,14 +13,12 @@ import {
 } from 'lucide-vue-next'
 
 import AppSidebar from './components/AppSidebar.vue'
-// 🟢 1. Import EmailComposer เข้ามาเพื่อให้ Vue รู้จัก
-import EmailComposer from './components/EmailComposer.vue' 
+import EmailComposer from './components/EmailComposer.vue'
 
 import { useLabelStore } from './stores/categoryStore'
 import { useUiStore } from './stores/uiStore'
 import userService from './services/user'
 import { UserProfile } from './interface/user'
-
 
 const uiStore = useUiStore()
 const labelStore = useLabelStore()
@@ -36,10 +34,14 @@ const collapsed = computed(() => listWidth.value <= MIN_PX + 4)
 
 const userProfile = ref<UserProfile | null>(null)
 
-const showLayout = computed(() => {
-  const hiddenLayoutPages = ['Home', 'Login', 'Callback']
-  return !hiddenLayoutPages.includes(route.name as string)
-})
+const PUBLIC_PAGES = ['Home', 'Login', 'Callback'] as const
+type PublicPage = typeof PUBLIC_PAGES[number]
+
+const isPublicPage = computed(() =>
+  PUBLIC_PAGES.includes(route.name as PublicPage)
+)
+
+const showLayout = computed(() => !isPublicPage.value)
 
 const presetWidths = [
   { label: '⟵',  title: 'Collapse',    value: MIN_PX },
@@ -52,28 +54,28 @@ const applyPreset = (preset: { value: number }) => {
   listWidth.value = preset.value
 }
 
-const currentUser = async () => {
-  await handleAuthCheck()
-  userProfile.value = await userService.get_profile()
-}
-
 const handleAuthCheck = async () => {
-  const publicPages = ['Login', 'Callback']
-  if (!route.name) return
+  const token = localStorage.getItem('jwt_token')
 
-  if (publicPages.includes(route.name as string)) {
-    uiStore.setLoading(false)
+  if (isPublicPage.value) {
+    if (token) {
+      router.replace('/inbox')
+    } else {
+      uiStore.setLoading(false)
+    }
     return
   }
 
-  const token = localStorage.getItem('jwt_token')
   if (!token) {
     handleLogout()
     return
   }
+}
 
-  if (route.path === '/' || route.name === 'Login') {
-    router.replace('/inbox')
+const currentUser = async () => {
+  await handleAuthCheck()
+  if (!isPublicPage.value) {
+    userProfile.value = await userService.get_profile()
   }
 }
 
@@ -84,37 +86,26 @@ const handleLogout = () => {
   uiStore.setLoading(false)
 }
 
-onMounted(async () => {  
-  if (window.electronAPI) {
-    window.electronAPI.onOAuthCallback(async (code: string) => {
-      await router.push(`/callback?code=${code}`)
-    })
-  }
+onMounted(async () => {
+  window.ipcRenderer?.on('oauth-callback', async (_: unknown, { token }: { token: string }) => {
+    await router.push(`/callback?token=${token}`)
+  })
 
-  if (route.name === 'Inbox') {
-    await handleAuthCheck()
-  }
-  
   await router.isReady()
   await currentUser()
-  if (labelStore.rawLabels.length === 0) {
+
+  if (!isPublicPage.value && labelStore.rawLabels.length === 0) {
     await labelStore.getLabels()
   }
 })
 
 watch(
   () => route.name,
-  async () => {
-    await handleAuthCheck()
+  async (name) => {
+    if (!name) return
+    await currentUser()
   }
 )
-
-watch(() => route.params.code, () => {
-  if (route.params.code === '401') {
-    localStorage.removeItem('jwt_token')
-    router.push('/login')
-  }
-})
 
 </script>
 
