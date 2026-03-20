@@ -1,10 +1,16 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-app.setAsDefaultProtocolClient('aiemailclient')
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('aiemailclient', process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient('aiemailclient')
+}
 
 process.env.APP_ROOT = path.join(__dirname, '..')
 
@@ -50,6 +56,10 @@ function handleDeepLink(url: string) {
 app.on('open-url', (event, url) => {
   event.preventDefault()
   handleDeepLink(url)
+})
+
+ipcMain.on('open-external', (_, url: string) => {
+  shell.openExternal(url)
 })
 
 const gotTheLock = app.requestSingleInstanceLock()

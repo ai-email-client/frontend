@@ -10,7 +10,11 @@ const isLoading = ref(false)
 async function handleGoogleLogin() {
   isLoading.value = true
   const response = await authService.login('gmail')
-  window.location.href = response.url
+  if (window.ipcRenderer) {
+    window.ipcRenderer.send('open-external', response.url)
+  } else {
+    window.open(response.url, '_blank')
+  }
 }
 
 </script>
