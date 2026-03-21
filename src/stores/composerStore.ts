@@ -36,6 +36,11 @@ const joinRecipients = (list: Sender[] | string | null | undefined): string => {
     .filter(Boolean)
     .join(', ')
 }
+const extractBody = (html: string): string => {
+  const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  return match ? match[1].trim() : html
+}
+
 export const useComposerStore = defineStore('composer', () => {
   const activeComposer = ref<DraftState | null>(null)
   const lastUpdated = ref<number>(0)
@@ -77,13 +82,15 @@ export const useComposerStore = defineStore('composer', () => {
         const currentId = originalEmail.message_id || ''
         references = `${prevRefs} ${currentId}`.trim()
 
-        initialQuotedBody = `<br><br><div class="moz-cite-prefix">On ${date}, ${from} wrote:</div><blockquote type="cite">\n${originalEmail.text_html || originalEmail.text_plain}\n</blockquote>`
+        const replyBodyContent = extractBody(originalEmail.text_html || originalEmail.text_plain || '')
+        initialQuotedBody = `<br><br><div class="moz-cite-prefix">On ${date}, ${from} wrote:</div><blockquote type="cite" style="border-left:1px solid #ccc;padding-left:8px;margin:0;">${replyBodyContent}</blockquote>`
 
       } else if (type === 'forward') {
         initialSubject = subject.toLowerCase().startsWith('fwd:') ? subject : `Fwd: ${subject}`
         initialBody = ''
 
-        initialQuotedBody = `<br><br>-------- Forwarded Message --------<br>Subject: ${subject}<br>Date: ${date}<br>From: ${from}<br>To: ${to}<br><br>${originalEmail.text_html || originalEmail.text_plain}`
+        const fwdBodyContent = extractBody(originalEmail.text_html || originalEmail.text_plain || '')
+        initialQuotedBody = `<br><br>-------- Forwarded Message --------<br>Subject: ${subject}<br>Date: ${date}<br>From: ${from}<br>To: ${to}<br><br>${fwdBodyContent}`
         references = originalEmail.references || null
 
       } else if (type === 'edit') {
@@ -101,14 +108,11 @@ export const useComposerStore = defineStore('composer', () => {
 
         const match = fullHtml.match(quoteRegex)
 
-        const toPlainText = (html: string) =>
-          html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim()
-
         if (match && match.index !== undefined) {
-          initialBody       = toPlainText(fullHtml.substring(0, match.index))
+          initialBody       = fullHtml.substring(0, match.index).trim()
           initialQuotedBody = fullHtml.substring(match.index)
         } else {
-          initialBody       = toPlainText(fullHtml)
+          initialBody       = fullHtml
           initialQuotedBody = null
         }
       }
@@ -120,7 +124,6 @@ export const useComposerStore = defineStore('composer', () => {
       in_reply_to: inReplyTo, references: references,
       quotedBody: initialQuotedBody, isMinimized: false
     }
-    console.log("Active Composer:", activeComposer.value)
   }
 
   const closeComposer = () => { activeComposer.value = null }

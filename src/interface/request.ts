@@ -70,15 +70,13 @@ export interface DraftCreateRequest {
   cc?: string;
   bcc?: string;
   subject?: string;
-  content?: {
-    text_html?: string,
-    text_plain?: string
-    attachments?: Attachment[]
-  }
+  content?: string;
+  content_type?: 'text/html' | 'text/plain';
+  attachments?: Attachment[];
   threadId?: string;
   in_reply_to?: string;
   references?: string;
-  message?: Message|null;
+  message?: Message | null;
 }
 
 export interface WritterRequest {

@@ -14,13 +14,14 @@ import { getFileData } from '../utils'
 import { Attachment } from '../interface/email'
 import { DraftCreateRequest, WritterRequest } from '../interface/request'
 import EmailShadow from './EmailShadow.vue'
+import RecipientInput from './RecipientInput.vue'
 
 const emit = defineEmits(['emailSent'])
 const composerStore = useComposerStore()
 const draft = computed(() => composerStore.activeComposer)
 
 const fileInput = ref<HTMLInputElement | null>(null)
-const bodyTextarea = ref<HTMLTextAreaElement | null>(null)
+const bodyEditor = ref<HTMLElement | null>(null)
 const showCcBcc = ref(false)
 
 const existingAttachments = ref<Attachment[]>([])
@@ -50,12 +51,27 @@ const undo = () => {
   if (!canUndo.value || !draft.value) return
   historyIndex.value--
   draft.value.body = bodyHistory.value[historyIndex.value]
+  syncEditorContent()
 }
 
 const redo = () => {
   if (!canRedo.value || !draft.value) return
   historyIndex.value++
   draft.value.body = bodyHistory.value[historyIndex.value]
+  syncEditorContent()
+}
+
+const syncEditorContent = () => {
+  nextTick(() => {
+    if (bodyEditor.value && draft.value) {
+      bodyEditor.value.innerHTML = draft.value.body
+    }
+  })
+}
+
+const handleBodyInput = (event: Event) => {
+  if (!draft.value) return
+  draft.value.body = (event.target as HTMLElement).innerHTML
 }
 
 const currentContentKey = computed(() => {
@@ -72,11 +88,12 @@ const currentContentKey = computed(() => {
 const isDirty = computed(() => currentContentKey.value !== lastSavedContent.value)
 
 const bodyStats = computed(() => {
-  const text = draft.value?.body ?? ''
+  const raw = draft.value?.body ?? ''
+  const text = raw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
   const chars = text.length
-  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+  const words = text === '' ? 0 : text.split(/\s+/).filter(Boolean).length
   const lines = text === '' ? 0 : text.split('\n').length
-  const readingMinutes = Math.ceil(words / 200) // เฉลี่ย 200 คำ/นาที
+  const readingMinutes = Math.ceil(words / 200)
   return { chars, words, lines, readingMinutes }
 })
 
@@ -108,28 +125,14 @@ const toAddresses = computed<string[]>(() => {
 
 const getCombinedHtmlContent = (): string => {
   if (!draft.value) return ''
-  let content = draft.value.body.replace(/\n/g, '<br>')
+  let content = draft.value.body
   if (draft.value.quotedBody) {
     let cleanQuote = draft.value.quotedBody
-    if (content.trim() === '') return cleanQuote
+    if (content.trim() === '' || content === '<br>') return cleanQuote
     cleanQuote = cleanQuote.replace(/^(?:<br\s*\/?>\s*)+/i, '')
     content += '<br><br>' + cleanQuote
   }
   return content
-}
-
-const getCombinedPlainText = (): string => {
-  if (!draft.value) return ''
-  let text = draft.value.body
-  if (draft.value.quotedBody) {
-    const cleanTextQuote = draft.value.quotedBody
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]*>/g, '')
-      .trim()
-    if (text.trim() === '') return cleanTextQuote
-    return text + '\n\n' + cleanTextQuote
-  }
-  return text
 }
 
 const handleFileSelect = async (event: Event) => {
@@ -144,7 +147,7 @@ const handleFileSelect = async (event: Event) => {
       size: file.size,
       data: await getFileData(file),
       headers: [],
-      attachmentId: '', 
+      attachmentId: '',
     }))
   )
   existingAttachments.value = [...(existingAttachments.value), ...processed]
@@ -159,7 +162,6 @@ const removeExistingAttachment = (index: number) => {
 const totalAttachmentSize = computed(() =>
   existingAttachments.value.reduce((sum, f) => sum + (f.size ?? 0), 0)
 )
-
 
 const saveDraft = async (force = false) => {
   if (!draft.value) return
@@ -176,25 +178,21 @@ const saveDraft = async (force = false) => {
       cc: draft.value.cc || undefined,
       bcc: draft.value.bcc || undefined,
       subject: draft.value.subject,
-      content: {
-        text_html: getCombinedHtmlContent(),
-        text_plain: getCombinedPlainText(),
-        attachments: existingAttachments.value,
-      },
+      content: getCombinedHtmlContent(),
       threadId: draft.value.threadId || undefined,
       in_reply_to: draft.value.in_reply_to || undefined,
       references: draft.value.references || undefined,
     }
 
-    if (draft.value.draftId) {
-      await emailService.updateDraft(draft.value.draftId, payload)
-    } else {
-      const res = await emailService.createDraft(payload)
-      if (res?.id) {
-        draft.value.draftId = res.id
-        if (res.message?.threadId) draft.value.threadId = res.message.threadId
-      }
-    }
+    // if (draft.value.draftId) {
+    //   await emailService.updateDraft(draft.value.draftId, payload)
+    // } else {
+    //   const res = await emailService.createDraft(payload)
+    //   if (res?.id) {
+    //     draft.value.draftId = res.id
+    //     if (res.message?.threadId) draft.value.threadId = res.message.threadId
+    //   }
+    // }
 
     lastSavedContent.value = currentContentKey.value
     lastSavedAt.value = new Date()
@@ -240,8 +238,7 @@ const sendToDify = async () => {
     if (aiResponse?.draft && draft.value) {
       pushHistory(aiResponse.draft)
       draft.value.body = aiResponse.draft
-      await nextTick()
-      bodyTextarea.value?.focus()
+      syncEditorContent()
     }
   } catch (error) {
     console.error('AI Service Error:', error)
@@ -316,6 +313,8 @@ watch(
     } else {
       existingAttachments.value = []
     }
+
+    syncEditorContent()
   },
   { immediate: true }
 )
@@ -325,6 +324,7 @@ onMounted(() => {
   clockInterval = setInterval(() => {
     if (lastSavedAt.value) lastSavedAt.value = new Date(lastSavedAt.value.getTime())
   }, 30_000)
+  syncEditorContent()
 })
 
 onBeforeUnmount(() => {
@@ -356,7 +356,6 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex items-center gap-3">
-        <!-- Save status indicator -->
         <div class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-800 border border-gray-700 min-w-[80px] justify-center">
           <template v-if="saveStatusLabel === 'saving'">
             <Loader2 :size="10" class="animate-spin text-blue-400 flex-shrink-0" />
@@ -398,14 +397,12 @@ onBeforeUnmount(() => {
 
       <!-- Recipients + Subject -->
       <div class="px-4 py-2 space-y-0.5 border-b border-gray-100">
-
-        <!-- To -->
         <div class="flex items-center group py-1.5">
           <label class="text-gray-400 text-sm w-16 font-medium flex-shrink-0">To</label>
-          <input
+          <RecipientInput
             v-model="draft.to"
-            class="flex-1 outline-none text-base bg-transparent placeholder-gray-300"
             placeholder="Recipients"
+            class="flex-1"
           />
           <button
             @click="showCcBcc = !showCcBcc"
@@ -415,7 +412,6 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <!-- Recipient badge row -->
         <div v-if="toAddresses.length > 0" class="flex flex-wrap gap-1 pb-1 pl-16">
           <span
             v-for="addr in toAddresses"
@@ -426,33 +422,29 @@ onBeforeUnmount(() => {
           </span>
         </div>
 
-        <!-- Duplicate warning -->
         <div v-if="recipientWarning" class="flex items-center gap-1.5 pl-16 pb-1 text-[11px] text-amber-600">
           <AlertCircle :size="12" />
           {{ recipientWarning }}
         </div>
 
-        <!-- Cc -->
         <div v-if="showCcBcc" class="flex items-center py-1.5 border-t border-gray-50">
           <label class="text-gray-400 text-sm w-16 font-medium flex-shrink-0">Cc</label>
-          <input
+          <RecipientInput
             v-model="draft.cc"
-            class="flex-1 outline-none text-base bg-transparent placeholder-gray-300"
             placeholder="Copy to…"
+            class="flex-1"
           />
         </div>
 
-        <!-- Bcc -->
         <div v-if="showCcBcc" class="flex items-center py-1.5 border-t border-gray-100">
           <label class="text-gray-400 text-sm w-16 font-medium flex-shrink-0">Bcc</label>
-          <input
+          <RecipientInput
             v-model="draft.bcc"
-            class="flex-1 outline-none text-base bg-transparent placeholder-gray-300"
             placeholder="Secret copy to…"
+            class="flex-1"
           />
         </div>
 
-        <!-- Subject -->
         <div class="flex items-center py-1.5 border-t border-gray-100">
           <label class="text-gray-400 text-sm w-16 font-medium flex-shrink-0">Subject</label>
           <input
@@ -463,13 +455,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Textarea + quoted body -->
       <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col p-0">
-        <textarea
-          ref="bodyTextarea"
-          v-model="draft.body"
-          class="w-full p-6 outline-none resize-none text-base text-gray-800 leading-relaxed min-h-[250px] flex-shrink-0"
-          placeholder="Write your thoughts here…"
+        <div
+          ref="bodyEditor"
+          contenteditable="true"
+          @input="handleBodyInput"
+          class="w-full p-6 outline-none text-base text-gray-800 leading-relaxed min-h-[250px] flex-shrink-0"
+          data-placeholder="Write your thoughts here…"
         />
 
         <div v-if="draft.quotedBody" class="mx-6 mb-6">
@@ -501,7 +493,6 @@ onBeforeUnmount(() => {
         <span class="text-[10px] text-gray-400">
           ~<span class="font-medium text-gray-500">{{ bodyStats.readingMinutes }}</span> min read
         </span>
-        <!-- Undo / Redo -->
         <div class="flex items-center gap-1 ml-auto">
           <button
             @click="undo"
@@ -514,7 +505,7 @@ onBeforeUnmount(() => {
           <button
             @click="redo"
             :disabled="!canRedo"
-            class="p-1 rounded hover:bg-gray-200 text-gray-400 disabled:opacity-30 transition-colors rotate-y-180 scale-x-[-1]"
+            class="p-1 rounded hover:bg-gray-200 text-gray-400 disabled:opacity-30 transition-colors scale-x-[-1]"
             title="Redo (ctrl+y)"
           >
             <RotateCcw :size="12" />
@@ -547,8 +538,6 @@ onBeforeUnmount(() => {
             <X :size="14" />
           </button>
         </div>
-
-        <!-- Total size -->
         <span class="self-center text-[10px] text-gray-400 ml-1">
           Total: {{ (totalAttachmentSize / 1024).toFixed(0) }} KB
         </span>
@@ -557,7 +546,6 @@ onBeforeUnmount(() => {
       <!-- Action toolbar -->
       <div class="p-5 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-2xl">
         <div class="flex items-center gap-3">
-          <!-- Send button -->
           <button
             @click="sendEmail"
             :disabled="isSending || !isFormValid"
@@ -572,7 +560,6 @@ onBeforeUnmount(() => {
             </div>
           </button>
 
-          <!-- AI Rewrite button -->
           <button
             @click="sendToDify"
             :disabled="!draft.body || isAiLoading"
@@ -585,7 +572,6 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Attach -->
           <button
             @click="fileInput?.click()"
             class="p-3 hover:bg-gray-100 rounded-2xl text-gray-500 transition-colors"
@@ -597,7 +583,6 @@ onBeforeUnmount(() => {
 
           <div class="w-px h-8 bg-gray-100 mx-1" />
 
-          <!-- Discard -->
           <button
             @click="discardDraft"
             class="p-3 hover:bg-red-50 rounded-2xl text-gray-400 hover:text-red-500 transition-colors"
@@ -617,11 +602,13 @@ onBeforeUnmount(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #f3f4f6; border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #e5e7eb; }
 
-textarea {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-textarea::placeholder {
+[contenteditable]:empty:before {
+  content: attr(data-placeholder);
   color: #d1d5db;
-  font-style: normal;
+  pointer-events: none;
+}
+
+[contenteditable]:focus {
+  outline: none;
 }
 </style>
