@@ -3,12 +3,12 @@ import { ref, computed, nextTick } from 'vue'
 import { X, Pencil } from 'lucide-vue-next'
 
 const props = defineProps<{
-  modelValue: string
+  modelValue: string[]
   placeholder?: string
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: string[]]
 }>()
 
 const inputRef = ref<HTMLInputElement | null>(null)
@@ -17,16 +17,10 @@ const inputText = ref('')
 const editingIndex = ref<number | null>(null)
 const editingText = ref('')
 
-const tags = computed<string[]>(() => {
-  if (!props.modelValue) return []
-  return props.modelValue
-    .split(/[,;]/)
-    .map(s => s.trim())
-    .filter(Boolean)
-})
+const tags = computed<string[]>(() => props.modelValue ?? [])
 
 const emitTags = (list: string[]) => {
-  emit('update:modelValue', list.join(', '))
+  emit('update:modelValue', list)
 }
 
 const addTag = () => {
@@ -47,10 +41,8 @@ const startEdit = (index: number) => {
   editingIndex.value = index
   editingText.value = tags.value[index]
   nextTick(() => {
-    if (editInputRef.value) {
-      editInputRef.value.focus()
-      editInputRef.value.select()
-    }
+    editInputRef.value?.focus()
+    editInputRef.value?.select()
   })
 }
 
@@ -107,11 +99,7 @@ const handlePaste = (e: ClipboardEvent) => {
 
 const focusInput = () => {
   if (editingIndex.value !== null) return
-  nextTick(() => {
-    if (inputRef.value) {
-      inputRef.value.focus()
-    }
-  })
+  nextTick(() => inputRef.value?.focus())
 }
 </script>
 
@@ -139,7 +127,7 @@ const focusInput = () => {
         v-else
         class="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-medium border border-blue-100 shrink-0 cursor-pointer hover:bg-blue-100 transition-colors"
         @click.stop="startEdit(i)"
-        :title="'Click to edit'"
+        title="Click to edit"
       >
         <Pencil :size="9" class="opacity-0 group-hover:opacity-50 transition-opacity" />
         {{ tag }}

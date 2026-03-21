@@ -202,7 +202,10 @@ export default {
         try {
             const response = await api.post<Draft>('/email/draft/create', body)
             return response.data
-        } catch (error) {
+        } catch (error: any) {
+            if (error.response?.status === 422) {
+                console.log('422 detail:', JSON.stringify(error.response.data, null, 2))
+            }
             throw error
         }
     },

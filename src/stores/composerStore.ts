@@ -8,19 +8,20 @@ export interface DraftState {
   threadId: string | null
   messageId: string | null
   message: Message | null
-  to: string
-  cc: string
-  bcc: string
+  to: string[]
+  cc: string[]
+  bcc: string[]
   subject: string
   body: string
-  in_reply_to: string | null 
+  in_reply_to: string | null
   references: string | null
-  quotedBody: string | null 
+  quotedBody: string | null
   isMinimized: boolean
 }
 
-const joinRecipients = (list: Sender[] | string | null | undefined): string => {
-  if (!list) return ''
+// ✅ return string[] เสมอ
+const splitRecipients = (list: Sender[] | string | null | undefined): string[] => {
+  if (!list) return []
   if (typeof list === 'string') {
     return list
       .split(/[,;]/)
@@ -29,16 +30,23 @@ const joinRecipients = (list: Sender[] | string | null | undefined): string => {
         return match ? match[1].trim() : s.trim()
       })
       .filter(Boolean)
-      .join(', ')
   }
-  return list
+  return (list as Sender[])
     .map(r => r.email?.trim())
-    .filter(Boolean)
-    .join(', ')
+    .filter(Boolean) as string[]
 }
+
 const extractBody = (html: string): string => {
   const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  return match ? match[1].trim() : html
+  if (match) return match[1].trim()
+  return html
+    .replace(/<!DOCTYPE[^>]*>/i, '')
+    .replace(/<html[^>]*>/i, '')
+    .replace(/<\/html>/i, '')
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/i, '')
+    .replace(/<body[^>]*>/i, '')
+    .replace(/<\/body>/i, '')
+    .trim()
 }
 
 export const useComposerStore = defineStore('composer', () => {
@@ -51,9 +59,9 @@ export const useComposerStore = defineStore('composer', () => {
     draftId: string | null = null,
     originalEmail: Message | null = null
   ) => {
-    let initialTo = ''
-    let initialCc = ''
-    let initialBcc = ''
+    let initialTo: string[] = []
+    let initialCc: string[] = []
+    let initialBcc: string[] = []
     let initialSubject = ''
     let initialBody = ''
     let initialQuotedBody: string | null = null
@@ -66,17 +74,16 @@ export const useComposerStore = defineStore('composer', () => {
       const from = originalEmail.sender?.email || ''
       const date = originalEmail.date || ''
       const subject = originalEmail.subject || ''
-      const to = joinRecipients(originalEmail.to as any)
+      const toStr = splitRecipients(originalEmail.to as any).join(', ')
 
       threadId = originalEmail.threadId || null
       messageId = originalEmail.id || null
 
       if (type === 'reply') {
-        initialTo = from
+        initialTo = [from]
         initialSubject = subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`
         initialBody = ''
-
-        inReplyTo = originalEmail.message_id || null
+        inReplyTo = originalEmail.in_reply_to || null
 
         const prevRefs = originalEmail.references || ''
         const currentId = originalEmail.message_id || ''
@@ -90,22 +97,19 @@ export const useComposerStore = defineStore('composer', () => {
         initialBody = ''
 
         const fwdBodyContent = extractBody(originalEmail.text_html || originalEmail.text_plain || '')
-        initialQuotedBody = `<br><br>-------- Forwarded Message --------<br>Subject: ${subject}<br>Date: ${date}<br>From: ${from}<br>To: ${to}<br><br>${fwdBodyContent}`
+        initialQuotedBody = `<br><br>-------- Forwarded Message --------<br>Subject: ${subject}<br>Date: ${date}<br>From: ${from}<br>To: ${toStr}<br><br>${fwdBodyContent}`
         references = originalEmail.references || null
 
       } else if (type === 'edit') {
-        initialTo      = joinRecipients(originalEmail.to)
-        initialCc      = joinRecipients(originalEmail.cc)
-        initialBcc     = joinRecipients(originalEmail.bcc)
+        initialTo  = splitRecipients(originalEmail.to)
+        initialCc  = splitRecipients(originalEmail.cc)
+        initialBcc = splitRecipients(originalEmail.bcc)
         initialSubject = subject || ''
-
         inReplyTo  = originalEmail.in_reply_to || null
         references = originalEmail.references || null
 
         const fullHtml = originalEmail.text_html || originalEmail.text_plain || ''
-
         const quoteRegex = /(?:<br\s*\/?>\s*)*(<div[^>]*class=["']?gmail_quote["']?[^>]*>|<div[^>]*class=["']?moz-cite-prefix["']?[^>]*>|<div[^>]*id=["']?(?:divRplyFwdMsg|mail-editor-reference-message-container)["']?[^>]*>|<hr[^>]*tabindex=["']?-1["']?[^>]*>|<blockquote[^>]*type=["']?cite["']?[^>]*>|-------- Forwarded Message --------)/i
-
         const match = fullHtml.match(quoteRegex)
 
         if (match && match.index !== undefined) {
@@ -117,11 +121,12 @@ export const useComposerStore = defineStore('composer', () => {
         }
       }
     }
+
     activeComposer.value = {
       draftId, threadId, messageId, type, message: originalEmail,
       to: initialTo, cc: initialCc, bcc: initialBcc,
       subject: initialSubject, body: initialBody,
-      in_reply_to: inReplyTo, references: references,
+      in_reply_to: inReplyTo, references,
       quotedBody: initialQuotedBody, isMinimized: false
     }
   }

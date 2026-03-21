@@ -66,12 +66,12 @@ export interface MessageModifyLabelRequest {
 }
 
 export interface DraftCreateRequest {
-  to?: string;
-  cc?: string;
-  bcc?: string;
+  to?: string[];
+  cc?: string[];
+  bcc?: string[];
   subject?: string;
   content?: string;
-  content_type?: 'text/html' | 'text/plain';
+  content_type?: 'html' | 'plain';
   attachments?: Attachment[];
   threadId?: string;
   in_reply_to?: string;

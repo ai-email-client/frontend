@@ -77,9 +77,9 @@ const handleBodyInput = (event: Event) => {
 const currentContentKey = computed(() => {
   if (!draft.value) return ''
   return [
-    draft.value.to,
-    draft.value.cc,
-    draft.value.bcc,
+    draft.value.to.join(','),
+    draft.value.cc.join(','),
+    draft.value.bcc.join(','),
     draft.value.subject,
     draft.value.body,
   ].join('|')
@@ -113,15 +113,7 @@ const lastSavedLabel = computed(() => {
   return `${Math.round(diff / 60)}m ago`
 })
 
-const isFormValid = computed(() => !!draft.value?.to?.trim())
-
-const toAddresses = computed<string[]>(() => {
-  if (!draft.value?.to) return []
-  return draft.value.to
-    .split(/[,;]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-})
+const isFormValid = computed(() => (draft.value?.to?.length ?? 0) > 0)
 
 const getCombinedHtmlContent = (): string => {
   if (!draft.value) return ''
@@ -165,7 +157,7 @@ const totalAttachmentSize = computed(() =>
 
 const saveDraft = async (force = false) => {
   if (!draft.value) return
-  const hasContent = draft.value.to || draft.value.subject || draft.value.body
+  const hasContent = draft.value.to.length > 0 || draft.value.subject || draft.value.body
   if (!hasContent) return
   if (!isDirty.value && !force) return
 
@@ -175,24 +167,29 @@ const saveDraft = async (force = false) => {
   try {
     const payload: DraftCreateRequest = {
       to: draft.value.to,
-      cc: draft.value.cc || undefined,
-      bcc: draft.value.bcc || undefined,
+      cc: draft.value.cc.length > 0 ? draft.value.cc : undefined,
+      bcc: draft.value.bcc.length > 0 ? draft.value.bcc : undefined,
       subject: draft.value.subject,
       content: getCombinedHtmlContent(),
+      content_type: 'html',
       threadId: draft.value.threadId || undefined,
       in_reply_to: draft.value.in_reply_to || undefined,
       references: draft.value.references || undefined,
+      attachments: existingAttachments.value,
+      
     }
 
-    // if (draft.value.draftId) {
-    //   await emailService.updateDraft(draft.value.draftId, payload)
-    // } else {
-    //   const res = await emailService.createDraft(payload)
-    //   if (res?.id) {
-    //     draft.value.draftId = res.id
-    //     if (res.message?.threadId) draft.value.threadId = res.message.threadId
-    //   }
-    // }
+    if (draft.value.draftId) {
+      await emailService.updateDraft(draft.value.draftId, payload)
+    } else {
+      const res = await emailService.createDraft(payload)
+      if (res?.id) {
+        draft.value.draftId = res.id
+        if (res.message?.threadId) draft.value.threadId = res.message.threadId
+      }
+      console.log(res)
+    }
+
 
     lastSavedContent.value = currentContentKey.value
     lastSavedAt.value = new Date()
@@ -258,7 +255,7 @@ const discardDraft = async () => {
 let autoSaveTimeout: ReturnType<typeof setTimeout>
 
 watch(
-  () => [draft.value?.to, draft.value?.cc, draft.value?.bcc, draft.value?.subject],
+  () => [draft.value?.to.join(','), draft.value?.cc.join(','), draft.value?.bcc.join(','), draft.value?.subject],
   () => {
     clearTimeout(autoSaveTimeout)
     autoSaveTimeout = setTimeout(() => saveDraft(), 2000)
@@ -288,8 +285,8 @@ watch(
   () => [draft.value?.to, draft.value?.cc, draft.value?.bcc],
   () => {
     const all: string[] = []
-    ;[draft.value?.to, draft.value?.cc, draft.value?.bcc].forEach((field) => {
-      if (field) all.push(...field.split(/[,;]/).map((s) => s.trim().toLowerCase()).filter(Boolean))
+    ;[draft.value?.to ?? [], draft.value?.cc ?? [], draft.value?.bcc ?? []].forEach((field) => {
+      all.push(...field.map(s => s.trim().toLowerCase()).filter(Boolean))
     })
     const dupes = all.filter((v, i) => all.indexOf(v) !== i)
     recipientWarning.value = dupes.length
@@ -412,15 +409,15 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div v-if="toAddresses.length > 0" class="flex flex-wrap gap-1 pb-1 pl-16">
+        <!-- <div v-if="draft.to.length > 0" class="flex flex-wrap gap-1 pb-1 pl-16">
           <span
-            v-for="addr in toAddresses"
+            v-for="addr in draft.to"
             :key="addr"
             class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-medium"
           >
             {{ addr }}
           </span>
-        </div>
+        </div> -->
 
         <div v-if="recipientWarning" class="flex items-center gap-1.5 pl-16 pb-1 text-[11px] text-amber-600">
           <AlertCircle :size="12" />
