@@ -2,9 +2,11 @@
 import {
   ref
 } from 'vue'
+import { useRouter } from 'vue-router'
 
 import authService from '../services/auth'
 
+const router = useRouter()
 const isLoading = ref(false)
 
 async function handleGoogleLogin() {
@@ -13,7 +15,16 @@ async function handleGoogleLogin() {
   if (window.ipcRenderer) {
     window.ipcRenderer.send('open-external', response.url)
   } else {
-    window.open(response.url, '_blank')
+    window.open(response.url, '_blank', 'width=500,height=600')
+
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type === 'oauth-success') {
+        localStorage.setItem('jwt_token', event.data.token)
+        isLoading.value = false
+        router.replace('/inbox')
+      }
+    }, { once: true })
   }
 }
 

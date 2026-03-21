@@ -9,9 +9,16 @@ const statusMessage = ref('')
 const isError = ref(false)
 
 const saveTokenAndRedirect = (token: string) => {
+  if (window.opener) {
+    window.opener.postMessage(
+      { type: 'oauth-success', token },
+      window.location.origin
+    )
+    window.close()
+  } else {
     localStorage.setItem('jwt_token', token)
-    statusMessage.value = 'Login Success'
-    setTimeout(() => router.replace('/inbox'), 3000)
+    router.replace('/inbox')
+  }
 }
 
 onMounted(async () => {
