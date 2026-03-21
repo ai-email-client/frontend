@@ -249,6 +249,7 @@ const discardDraft = async () => {
   if (!confirm('Discard this draft?')) return
   if (draft.value?.draftId) await emailService.deleteDraft(draft.value.draftId)
   composerStore.closeComposer()
+  await nextTick()                
   composerStore.triggerRefresh()
 }
 

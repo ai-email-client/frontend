@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import EmailList from '../components/EmailList.vue'
 import Divider from '../components/Divider.vue'
 import EmailComposer from '../components/EmailComposer.vue'
@@ -112,6 +112,13 @@ const handleDrag = (clientX: number) => {
 
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 450 }
+
+watch(
+  () => composerStore.lastUpdated,
+  () => {
+    fetchEmails(stackToken.value[currentPage.value])
+  }
+)
 
 onMounted(() => {
   if (localStorage.getItem('jwt_token')) fetchEmails()
