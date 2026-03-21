@@ -76,9 +76,6 @@ const currentUser = async () => {
   await handleAuthCheck()
   if (!isPublicPage.value) {
     userProfile.value = await userService.get_profile()
-    if (labelStore.rawLabels.length === 0) {
-      await labelStore.getLabels()
-    }
   }
 }
 
@@ -96,6 +93,9 @@ onMounted(async () => {
 
   await router.isReady()
   await currentUser()
+  if (labelStore.rawLabels.length === 0) {
+    await labelStore.getLabels()
+  }
 })
 
 watch(

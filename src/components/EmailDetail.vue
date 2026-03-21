@@ -42,7 +42,7 @@ const summaryStore = useSummaryStore()
 const emailSummary = computed(() => {
   if (!props.email) return null
   const s = summaryStore.getSummary(props.email.id)
-  if (!s || s === 'processing' || s === 'error') return null
+  if (!s || s === 'processing' || s === 'queued' || s === 'error') return null
   return s as DifySummary
 })
 
@@ -66,32 +66,25 @@ const avatarHue = computed(() => {
   return Math.abs(hash) % 360
 })
 
-const loadAttachments = async () => {
-  if (!props.email?.attachments || props.email.attachments.length === 0) {
-    attachments.value = []
-    return attachments.value
-  }
-
-  isProcessing.value = true 
+const loadAttachments = async (file: Attachment) => {
   try {
-    const results = await Promise.all(props.email.attachments.map(async (att) => {
-      if (att.attachmentId && !att.data) {
-        try {
-          const res = await emailService.getAttachment(props.email!.id, att.attachmentId)
-          return { ...att, data: res.data }
-        } catch (e) { return att }
-      }
-      return att
-    }))
-    attachments.value = results
-  } finally {
-    isProcessing.value = false
+    const response = await emailService.getAttachment(props.email!.id, file.attachmentId)
+    const attachment = {
+      filename: file.filename,
+      mimeType: file.mimeType,
+      size: file.size,
+      attachmentId: file.attachmentId,
+      headers: file.headers,
+      data: response.data
+    }
+    downloadAttachment(attachment)
+  } catch (error) {
+    console.error(error)
   }
 }
 
 watch(() => props.email, (newEmail) => {
   if (!newEmail) return
-  loadAttachments()
   const _hasHtml = !!newEmail.text_html && newEmail.text_html.trim().length > 0
   const _hasText = !!newEmail.text_plain && newEmail.text_plain.trim().length > 0
   showHtml.value = _hasHtml ? true : _hasText ? false : true
@@ -200,6 +193,14 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
         >
           <AlertCircle :size="16" class="text-red-400 shrink-0" />
           <span class="text-sm text-red-400">Failed to analyze email</span>
+        </div>
+        <div
+          v-else-if="summaryStatus === 'queued'"
+          class="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+          :class="darkMode ? 'bg-gray-800/50 border-gray-700/40' : 'bg-white border-gray-100 shadow-sm'"
+        >
+          <div class="w-4 h-4 rounded-full border-2 border-transparent border-t-yellow-500 animate-spin shrink-0" />
+          <span class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Queued for analysis...</span>
         </div>
 
         <div
@@ -369,7 +370,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
           <div v-if="showHtml" class="bg-white">
             <EmailShadow 
               :content="email.text_html || ''" 
-              :attachments="attachments" 
+              :attachments="email.attachments || []" 
             />
           </div>
 
@@ -391,14 +392,14 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
           >
             <Paperclip :size="13" />
-            Attachments ({{ attachments.length }})
+            Attachments ({{ email.attachments.length }})
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div
-              v-for="(file, index) in attachments"
-              :key="index"
-              @click="downloadAttachment(file)"
+              v-for="(file) in email.attachments"
+              :key="file.attachmentId"
+              @click="loadAttachments(file)"
               class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all group"
               :class="darkMode
                 ? 'bg-gray-800/60 border-gray-700/50 hover:border-blue-500/40 hover:bg-gray-800'
