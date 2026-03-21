@@ -498,6 +498,7 @@ onMounted(() => {
             :class="darkMode ? 'border-gray-700/40' : 'border-gray-100 shadow-sm'">
             <div v-if="selectedEmail.text_html" class="bg-white">
               <EmailShadow
+                :emailId="selectedEmail.id"
                 :content="selectedEmail.text_html || ''"
                 :attachments="selectedEmail.attachments || []"
               />

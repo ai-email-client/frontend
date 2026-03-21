@@ -53,7 +53,6 @@ const summaryStatus = computed(() => {
 
 const hasHtml = computed(() => !!props.email?.text_html && props.email.text_html.trim().length > 0)
 const hasText = computed(() => !!props.email?.text_plain && props.email.text_plain.trim().length > 0)
-const attachments = ref<Attachment[]>([])
 
 const isProcessing = ref(false)
 const isLoading = computed(() => props.loading || isProcessing.value)
@@ -369,6 +368,7 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
         >
           <div v-if="showHtml" class="bg-white">
             <EmailShadow 
+              :emailId="email.id"
               :content="email.text_html || ''" 
               :attachments="email.attachments || []" 
             />

@@ -2,17 +2,39 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { Attachment } from '../interface/email';
 import { resolveCidImages, sanitizeHtml } from '../utils';
+import emailService from '../services/email';
 
 const props = defineProps<{
+  emailId: string
   content?: string
   attachments: Attachment[]
 }>()
 
 const host = ref<HTMLElement | null>(null)
-
+  
+const loadAttachments = async (file: Attachment) => {
+  try {
+    const response = await emailService.getAttachment(props.emailId, file.attachmentId)
+    return response
+  } catch (error) {
+    console.error(error)
+  }
+}
+    
 const updateShadowDom = () => {
   if (!host.value || !props.content) return
 
+  if (props.attachments.length > 0 ) {
+    props.attachments.forEach(async (file) => {
+      if (!file.data) {
+        const response = await loadAttachments(file)
+        if (response) {
+          file.data = response.data
+        }
+      }
+    })
+  }
+  
   const withImages = resolveCidImages(props.content, props.attachments)
   const cleanHtml = sanitizeHtml(withImages)
 
