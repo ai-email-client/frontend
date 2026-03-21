@@ -1,9 +1,7 @@
 import auth from '../api/auth'
 
 const isElectron = (): boolean => {
-    console.log(window.electronAPI)
-console.log(typeof window.electronAPI)
-    return typeof window !== 'undefined' && !!window.electronAPI
+    return !!window.ipcRenderer
 }
 
 const getOrigin = (): 'web' | 'electron' => {

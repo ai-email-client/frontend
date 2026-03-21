@@ -12,9 +12,9 @@ export interface Attachment {
   filename: string;
   mimeType: string;
   size: number;
-  attachmentId?: string | null;
+  attachmentId: string;
   headers: Header[];
-  data: string;
+  data?: string | null;
 }
 
 export interface AttachmentData{

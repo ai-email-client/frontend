@@ -50,9 +50,18 @@ const summaryStore = useSummaryStore()
 const containerRef = ref<HTMLElement | null>(null)
 const emailList = ref<Message[]>([])
 const selectedEmail = ref<Message | null>(null)
-// const isLoadingEmail = ref(false)
-const summary = ref<DifySummary | null>(null)
 
+const summary = computed(() => {
+  if (!selectedEmail.value) return null
+  const s = summaryStore.getSummary(selectedEmail.value.id)
+  if (!s || s === 'processing' || s === 'error') return null
+  return s as DifySummary
+})
+
+const summaryLoading = computed(() => {
+  if (!selectedEmail.value) return false
+  return summaryStore.getSummary(selectedEmail.value.id) === 'processing'
+})
 // ── Layout Control ──
 const MIN_PX  = 80
 const MAX_PX  = 800
@@ -131,28 +140,26 @@ const fetchEmails = async (
 const fetchSummary = (emails: Message[]) => {
   emails.forEach(e => summaryStore.setSummary(e.id, 'processing'))
 
-  difyService.getSummaryBatch({ 
-    emails: emails.map(e => ({ 
-      msg_id: e.id, 
-      email_tags: e.labelIds || [],
-      sender: e.sender?.email || '',
-      text_plain: e.text_plain || e.text_html || ''
-    }))
-  })
-    .then(res => {
-      res.forEach((item: DifySummary) => {
+  emails.forEach(email => {
+    difyService.getSummary({
+      msg_id: email.id,
+      email_tags: email.labelIds || [],
+      sender: email.sender?.email || '',
+      text_plain: email.text_plain || email.text_html || ''
+    })
+      .then((item: DifySummary) => {
         if (item.status === 'done') {
-          summaryStore.setSummary(item.msg_id!, item)
+          summaryStore.setSummary(item?.msg_id || '', item)
+        } else if (item.status === 'queued') {
+          summaryStore.setSummary(item?.msg_id || '', 'queued')
+        
         } else if (item.status === 'error') {
-          summaryStore.setSummary(item.msg_id!, 'error')
+          summaryStore.setSummary(item?.msg_id || '', 'error')
         } else {
-          summaryStore.setSummary(item.msg_id!, 'processing')
+          summaryStore.setSummary(item?.msg_id || '', 'processing')
         }
       })
-    })
-    .catch(() => {
-      emails.forEach(e => summaryStore.setSummary(e.id, 'error'))
-    })
+  })
 }
 
 const nextPage = async () => {
@@ -242,7 +249,6 @@ onMounted(() => {
 watch(
   () => route.fullPath,
   () => {
-    console.log('Route changed', labels.value)
     stackToken.value = ['']
     currentPage.value = 0
     totalMessage.value = 1
@@ -308,6 +314,7 @@ watch(
       <EmailDetail
         :email="selectedEmail"
         :summary="summary"
+        :summary-loading="summaryLoading"
         :loading="uiStore.isLoading"
         :dark-mode="darkMode"
         @reply-email="handleOpenReplyComposer"

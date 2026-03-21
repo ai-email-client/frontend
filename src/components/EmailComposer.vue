@@ -144,10 +144,10 @@ const handleFileSelect = async (event: Event) => {
       size: file.size,
       data: await getFileData(file),
       headers: [],
-      attachmentId: null,
+      attachmentId: '', 
     }))
   )
-  existingAttachments.value = [...existingAttachments.value, ...processed]
+  existingAttachments.value = [...(existingAttachments.value), ...processed]
   saveDraft(true)
 }
 
@@ -479,6 +479,7 @@ onBeforeUnmount(() => {
             <div class="h-px flex-1 bg-gray-100" />
           </div>
           <EmailShadow
+            :emailId="draft.messageId || ''"
             :content="draft.quotedBody || ''"
             :attachments="existingAttachments"
             class="opacity-50 pointer-events-none select-none overflow-hidden max-h-[400px] border-l-4 border-blue-50/50 pl-4"
