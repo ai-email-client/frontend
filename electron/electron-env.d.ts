@@ -19,6 +19,14 @@ declare namespace NodeJS {
     /** /dist/ or /public/ */
     VITE_PUBLIC: string
   }
+  interface ImportMetaEnv {
+    readonly BASE_URL: string
+    readonly VITE_API_URL: string
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv
+  }
 }
 
 // Used in Renderer process, expose in `preload.ts`

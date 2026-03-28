@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# --- Electron & Vite Specifics ---
+dist-electron/
+release/
+out/
+
+.env
+.env.production
+.env.local
+.env.*.local
+
+Thumbs.db

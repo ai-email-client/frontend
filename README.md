@@ -1,18 +1,79 @@
-# Vue 3 + TypeScript + Vite
+# Introduction
+ This is a frontend application for an AI email client. 
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Prerequisites
+- Node.js (recommended LTS version)
 
-## Recommended IDE Setup
+## Steps
+1. Clone the repository
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+   Open the terminal and navigate to the directory where you want to clone the repository, then run:
+   ```
+   git clone https://github.com/ai-email-client/frontend.git
+   ```
+2. Install the required packages
 
-## Type Support For `.vue` Imports in TS
+    follow the instructions in the `frontend` directory and run:
+    ```bash
+    npm install
+    ```
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+3. Set up the environment variables
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+   If you host the backend on your local computer, you don't need to set up the environment variables
+   - VITE_API_URL: The URL of the backend API (Default: http://localhost:8000)
 
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+4. Run the application and build it
+
+    In local development:
+    ```bash
+    npm run dev
+    ```
+
+    In production:
+    ```bash
+    npm run build
+    ```
+    after build, you will receive a `release` folder, so you install it on other computer
+
+___
+# บทนำ
+แอปพลิเคชันฝั่ง Frontend สำหรับ AI Email Client
+
+## ข้อกำหนดเบื้องต้น
+- Node.js (แนะนำเวอร์ชัน LTS)
+
+## ขั้นตอน
+1. โคลนรีโพซิทอรี
+
+   เปิด Terminal แล้วไปยังโฟลเดอร์ที่ต้องการโคลน จากนั้นรันคำสั่ง:
+   ```
+   git clone https://github.com/ai-email-client/frontend.git
+   ```
+
+2. ติดตั้งแพ็กเกจที่จำเป็น
+
+   ทำตามคำแนะนำในโฟลเดอร์ `frontend` แล้วรันคำสั่ง:
+   ```bash
+   npm install
+   ```
+
+3. ตั้งค่าตัวแปรสภาพแวดล้อม (Environment Variables)
+
+   หากคุณโฮสต์ Backend เอง บนคอมพิวเตอร์ของคุณเอง ไม่จำเป็นต้องตั้งค่าตัวแปร
+   - `VITE_API_URL`: URL ของ Backend API (ค่าเริ่มต้น: http://localhost:8000)
+
+4. รันแอปพลิเคชันและบิลด์
+
+   สำหรับการพัฒนาในเครื่อง (Local):
+   ```bash
+   npm run dev
+   ```
+
+   สำหรับโปรดักชัน:
+   ```bash
+   npm run build
+   ```
+   หลังจากบิลด์เสร็จ จะได้โฟลเดอร์ `release` สำหรับนำไปติดตั้งบนเครื่องอื่นได้
+
+---

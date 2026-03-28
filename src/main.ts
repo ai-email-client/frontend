@@ -1,10 +1,16 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
+import router from './routers'
+import { createPinia } from 'pinia'
+import { setupInterceptors } from './api/api'
 
-createApp(App).mount('#app').$nextTick(() => {
-  // Use contextBridge
-  window.ipcRenderer.on('main-process-message', (_event, message) => {
-    console.log(message)
-  })
-})
+const app = createApp(App)
+
+app.use(router)
+app.use(createPinia())
+
+setupInterceptors(router)
+
+app.mount('#app')
+
