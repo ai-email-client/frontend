@@ -12,6 +12,7 @@ const isLoading = ref(false)
 async function handleGoogleLogin() {
   isLoading.value = true
   const response = await authService.login('gmail')
+  console.log(response)
   if (window.ipcRenderer) {
     window.ipcRenderer.send('open-external', response.url)
   } else {

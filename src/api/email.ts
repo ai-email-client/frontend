@@ -140,12 +140,7 @@ export default {
     },
     async messageModify(body: MessageModifyLabelRequest) {
         try {
-
-
-            const payload = {
-                body
-            }
-            const response = await api.post<CategoryListResponse>('/email/message/modify', payload)
+            const response = await api.post<CategoryListResponse>('/email/message/modify', body)
             return response.data
         } catch (error) {
             throw error

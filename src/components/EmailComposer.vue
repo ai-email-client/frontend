@@ -187,7 +187,6 @@ const saveDraft = async (force = false) => {
         draft.value.draftId = res.id
         if (res.message?.threadId) draft.value.threadId = res.message.threadId
       }
-      console.log(res)
     }
 
 

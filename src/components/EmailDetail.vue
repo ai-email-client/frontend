@@ -89,7 +89,7 @@ watch(() => props.email, (newEmail) => {
   showHtml.value = _hasHtml ? true : _hasText ? false : true
 }, { immediate: true })
 
-defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEmail'])
+defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEmail', 'readEmail'])
 </script>
 
 <template>
@@ -146,6 +146,17 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
             : 'text-gray-400 hover:text-red-500 hover:bg-red-50'"
         >
           <Trash2 :size="16" />
+        </button>
+
+        <button
+          @click="$emit('readEmail')"
+          title="Mark as read"
+          class="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+          :class="darkMode
+            ? 'text-gray-500 hover:text-blue-400 hover:bg-blue-400/10'
+            : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'"
+        >
+          <Mail :size="16" />
         </button>
       </div>
     </div>

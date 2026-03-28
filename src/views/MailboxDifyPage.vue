@@ -116,7 +116,8 @@ const fetchEmails = async (
   try {
     uiStore.setLoading(true)
     selectedEmail.value = null
-
+    emailList.value = []
+    
     const response = await emailService.fetchEmails(
       labelIds, maxResults, pageToken, query, includeSpamTrash, format, metadataHeaders
     )
@@ -228,6 +229,35 @@ const handleSelectEmail = async (email: Message) => {
   }
 }
 
+const handleReadEmail = async () => {
+  if (selectedEmail.value) {
+    selectedEmail.value.labelIds = selectedEmail.value.labelIds?.filter(label => label !== 'UNREAD') || []
+    await emailService.messageModify({ 
+      id: selectedEmail.value.id,
+      addLabelIds: [],
+      removeLabelIds: ['UNREAD'] 
+    })
+    
+  }
+}
+
+const handleTrashEmail = async () => {
+  if (!confirm('Are you sure you want to move this email to trash?')) return
+  if (selectedEmail.value) {
+    await emailService.deleteMessage(selectedEmail.value.id)
+  }
+  fetchEmails(
+      labels.value,
+      limit,
+      stackToken.value[currentPage.value],
+      query,
+      includeSpamTrash.value,
+      format,
+      metadataHeaders
+    )
+}
+
+
 const handleCollapse = () => { currentWidth.value = MIN_PX }
 const handleExpand   = () => { currentWidth.value = 450 }
 
@@ -252,8 +282,6 @@ watch(
     stackToken.value = ['']
     currentPage.value = 0
     totalMessage.value = 1
-    emailList.value = []
-    selectedEmail.value = null
     summaryStore.clearSummaries()
     getTotalMessage()
     fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
@@ -317,8 +345,10 @@ watch(
         :summary-loading="summaryLoading"
         :loading="uiStore.isLoading"
         :dark-mode="darkMode"
-        @reply-email="handleOpenReplyComposer"
-        @forward-email="handleOpenForwardComposer"
+        @replyEmail="handleOpenReplyComposer"
+        @forwardEmail="handleOpenForwardComposer"
+        @trashEmail="handleTrashEmail"
+        @readEmail="handleReadEmail"
       />
       <div class="fixed w-[100%] bottom-0 right-10 z-50">
         <EmailComposer />

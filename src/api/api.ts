@@ -1,8 +1,8 @@
 import axios from 'axios'
 import type { Router } from 'vue-router'
-
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseURL,
     timeout: 120000,
     headers: {
         'Content-Type': 'application/json'
