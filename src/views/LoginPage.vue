@@ -46,7 +46,7 @@ async function handleGoogleLogin() {
         </div>
       </div>
 
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome</h1>
       <p class="text-gray-500 dark:text-gray-400 mb-8">Sign in to Hermes to continue</p>
 
       <button @click="handleGoogleLogin" :disabled="isLoading"

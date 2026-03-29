@@ -24,6 +24,7 @@ let win: BrowserWindow | null = null
 
 function createWindow() {
   win = new BrowserWindow({
+    title: 'Hermes',
     width: 1200,
     height: 800,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
@@ -33,6 +34,7 @@ function createWindow() {
     },
     show: false,
   })
+  win.setMenuBarVisibility(false)
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
@@ -71,10 +73,7 @@ ipcMain.handle('api-request', async (_, { url, method, data, headers }) => {
   })
   
   const text = await res.text()
-  console.log('Response URL:', url)       // เช็ค URL ที่ยิงไป
-  console.log('Response status:', res.status)
-  console.log('Response text:', text)     // ดูว่า backend ส่งอะไรมา
-  
+
   try {
     return JSON.parse(text)
   } catch {

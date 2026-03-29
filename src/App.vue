@@ -103,6 +103,9 @@ watch(
   async (name) => {
     if (!name) return
     await currentUser()
+    if (labelStore.rawLabels.length === 0) {
+      await labelStore.getLabels()
+    }
   }
 )
 
