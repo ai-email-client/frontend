@@ -11,23 +11,24 @@ const isLoading = ref(false)
 
 async function handleGoogleLogin() {
   isLoading.value = true
-  const response = await authService.login('gmail')
-  console.log(response)
-  if (window.ipcRenderer) {
-    window.ipcRenderer.send('open-external', response.url)
-  } else {
-    window.open(response.url, '_blank', 'width=500,height=600')
+  localStorage.removeItem('oauth_result')
 
+  const response = await authService.login('gmail')
+  const isElectron = !!window.ipcRenderer
+
+  if (isElectron) {
+    window.ipcRenderer.send('open-auth', response.url)
+  } else {
+    window.open(response.url, 'oauth-popup', 'width=500,height=600')
     window.addEventListener('message', (event) => {
-      if (event.origin !== window.location.origin) return
-      if (event.data?.type === 'oauth-success') {
-        localStorage.setItem('jwt_token', event.data.token)
-        isLoading.value = false
-        router.replace('/inbox')
+      if (event.data.type === 'oauth-success') {
+        router.push('/inbox')
       }
-    }, { once: true })
+    })
   }
+
 }
+
 
 </script>
 

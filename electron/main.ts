@@ -21,6 +21,7 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null = null
+let authWin: BrowserWindow | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -34,7 +35,7 @@ function createWindow() {
     },
     show: false,
   })
-  win.setMenuBarVisibility(false)
+  win.setMenuBarVisibility(true)
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
@@ -49,6 +50,33 @@ function createWindow() {
   }
 }
 
+ipcMain.on('open-auth', (_, url: string) => {
+  authWin = new BrowserWindow({
+    width: 500,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      partition: 'persist:auth',
+    },
+  })
+ 
+  authWin.loadURL(url)
+ 
+  authWin.webContents.on('will-redirect', (event, redirectUrl) => {
+    if (redirectUrl.startsWith('aiemailclient://')) {
+      event.preventDefault()
+      handleDeepLink(redirectUrl)
+      authWin?.close()
+      authWin = null
+    }
+  })
+ 
+  authWin.on('closed', () => {
+    authWin = null
+  })
+})
+
 function handleDeepLink(url: string) {
   const parsed = new URL(url)
   const token = parsed.searchParams.get('token')
@@ -59,10 +87,6 @@ function handleDeepLink(url: string) {
 app.on('open-url', (event, url) => {
   event.preventDefault()
   handleDeepLink(url)
-})
-
-ipcMain.on('open-external', (_, url: string) => {
-  shell.openExternal(url)
 })
 
 ipcMain.handle('api-request', async (_, { url, method, data, headers }) => {
