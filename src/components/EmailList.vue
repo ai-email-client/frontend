@@ -72,7 +72,7 @@ const emit = defineEmits([
         <button
           v-for="email in emails"
           :key="email.id"
-          @click="$emit('select', email.id)"
+          @click="$emit('select', email)"
           class="relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-150 shrink-0 shadow-sm"
           :class="[
             selectedEmail?.id === email.id

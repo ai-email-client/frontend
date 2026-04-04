@@ -67,12 +67,12 @@ onUnmounted(() => {
     </div>
 
     <button
-      class="absolute top-4 -left-6 w-6 h-6 rounded-full border shadow flex items-center justify-center
+      class="absolute top-75 -left-6 w-6 h-10 rounded-full border shadow flex items-center justify-center
              opacity-0 group-hover:opacity-100 transition-opacity z-20"
       :class="darkMode
         ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-blue-700 hover:border-blue-600 hover:text-white'
         : 'bg-white border-gray-300 text-gray-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600'"
-      title="Collapse list"
+      title="Collapse"
       @mousedown.stop
       @click.stop="$emit('collapse')"
     >
@@ -82,12 +82,12 @@ onUnmounted(() => {
     </button>
 
     <button
-      class="absolute top-4 -right-6 w-6 h-6 rounded-full border shadow flex items-center justify-center
+      class="absolute top-75 -right-6 w-6 h-10 rounded-full border shadow flex items-center justify-center
              opacity-0 group-hover:opacity-100 transition-opacity z-20"
       :class="darkMode
         ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-blue-700 hover:border-blue-600 hover:text-white'
         : 'bg-white border-gray-300 text-gray-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600'"
-      title="Expand list"
+      title="Expand"
       @mousedown.stop
       @click.stop="$emit('expand')"
     >

@@ -344,8 +344,7 @@ onMounted(() => {
     </div>
 
     <div ref="containerRef" class="flex flex-1 overflow-hidden">
-
-      <div
+      <div v-if="currentWidth!=80"
         :style="{ width: `${currentWidth}px`, minWidth: `${MIN_PX}px`, flexShrink: 0 }"
         class="flex-col overflow-hidden transition-none"
         :class="showViewer ? 'hidden md:flex' : 'flex'"
@@ -468,6 +467,51 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </div>
+      <div v-else class="flex flex-col px-4 py-2 gap-2">
+        <button
+          @click="fetchEmails()"
+          :disabled="uiStore.isLoading"
+          title="Refresh"
+          class="w-9 h-9 rounded-full flex items-center justify-center transition-colors mb-1 shrink-0"
+          :class="darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'"
+        >
+          <RotateCw :size="18" :class="{ 'animate-spin': uiStore.isLoading }" />
+        </button>
+
+        <div class="w-6 border-t shrink-0" :class="darkMode ? 'border-gray-700' : 'border-gray-200'" />
+
+        <!-- Collapsed empty state -->
+        <div
+          v-if="!uiStore.isLoading && emails?.length === 0"
+          class="flex flex-col items-center gap-1.5 mt-4"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-300'"
+        >
+          <Mail :size="20" />
+          <span class="text-[9px] font-medium text-center leading-tight">No<br>mail</span>
+        </div>
+
+        <!-- Circle avatars -->
+        <button
+          v-for="email in emails"
+          :key="email.id"
+          @click="selectedEmail = email"
+          class="relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-150 shrink-0 shadow-sm"
+          :class="[
+            selectedEmail?.id === email.id
+              ? 'bg-blue-600 text-white scale-110 shadow-md'
+              : (darkMode
+                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-105'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105')
+          ]"
+        >
+          {{ getFirstCharacter(email.sender?.name || '') }}
+          <span
+            v-if="email.labelIds?.includes('UNREAD')"
+            class="absolute top-0 right-0 w-2.5 h-2.5 bg-blue-500 rounded-full border-2"
+            :class="darkMode ? 'border-gray-900' : 'border-white'"
+          />
+        </button>
       </div>
 
       <div class="hidden md:block">
