@@ -17,7 +17,7 @@ export interface DifySummary {
   email_category: string | null;
   date: string | null;
   time: string | null;
-  location: string | null;
+  location: Record<string, any> | string[] | string | null;
   instructions: string[] | null;
   required_items: string[] | null;
   summary: string | null;

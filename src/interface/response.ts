@@ -50,7 +50,7 @@ export interface EmailAnalysisResponse {
   confidence: number;
   date: string | null;
   time: string | null;
-  location: string | null;
+  location: Record<string, any> | string[] | string | null;
   email_category: string;
   summary: string;
   extraction_status: string;
@@ -171,7 +171,7 @@ export interface OverviewResponse {
   required_items: string[] | null
   date: string | null
   time: string | null
-  location: string | null
+  location: Record<string, any> | string[] | string | null;
 }
 
 export interface SpamResponse {
