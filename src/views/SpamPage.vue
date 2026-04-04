@@ -70,8 +70,8 @@ const filters = [
   { key: 'all',                                 label: 'All',                   icon: ShieldAlert  },
   { key: SpamType.PHISHING.toLowerCase(),       label: SpamType.PHISHING,       icon: ShieldX      },
   { key: SpamType.SPAM_MARKETING.toLowerCase(), label: SpamType.SPAM_MARKETING, icon: Flag         },
+  { key: SpamType.BENIGN.toLowerCase(),         label: SpamType.BENIGN,         icon: Badge        },
   { key: SpamType.PROMOTIONAL.toLowerCase(),    label: SpamType.PROMOTIONAL,    icon: TrendingUp   },
-  { key: SpamType.BULK.toLowerCase(),           label: SpamType.BULK,           icon: Badge        },
   { key: SpamType.OTHER.toLowerCase(),          label: SpamType.OTHER,          icon: Mail         },
   { key: 'threat',                              label: 'Threats',               icon: AlertTriangle},
 ]
@@ -85,29 +85,66 @@ const selectedSpam = computed((): SpamResponse | null => {
   return getSpamData(selectedEmail.value.id)
 })
 
-const filteredEmails = computed(() => {
-  if (activeFilter.value === 'all') return emails.value
+let abortController: AbortController | null = null
+const BATCH = 1
 
-  return emails.value.filter(email => {
-    const spam = getSpamData(email.id)
-    if (!spam) return false
+const filteredEmails = async () => {
+  emails.value = []
+  abortController?.abort()
+  abortController = new AbortController()
+  const signal = abortController.signal
 
-    if (activeFilter.value === 'threat') return spam.is_threat === true
+  const filterMap: Record<string, (s: SpamResponse) => boolean> = {
+    [SpamType.PHISHING.toLowerCase()]:       s => s.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase(),
+    [SpamType.SPAM_MARKETING.toLowerCase()]: s => s.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase(),
+    [SpamType.BENIGN.toLowerCase()]:         s => s.spam_type?.toLowerCase() === SpamType.BENIGN.toLowerCase(),
+    [SpamType.PROMOTIONAL.toLowerCase()]:    s => s.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase(),
+    [SpamType.OTHER.toLowerCase()]:          s => !!s.spam_type && !spamTypeValues.includes(s.spam_type.toLowerCase()),
+    threat:                                  s => s.is_threat === true,
+  }
 
-    if (activeFilter.value === SpamType.OTHER.toLowerCase()) {
-      return spam.spam_type && !spamTypeValues.includes(spam.spam_type.toLowerCase())
-    }
+  if (activeFilter.value === 'all') {
+    await fetchEmails()
+    return
+  }
 
-    return spam.spam_type?.toLowerCase() === activeFilter.value.toLowerCase()
-  })
-})
+  const predicate = filterMap[activeFilter.value]
+  if (!predicate) return
+
+  const ids = spams.value.filter(predicate).map(s => s.msg_id)
+  
+
+  const results: Message[] = []
+
+  for (let i = 0; i < ids.length; i += BATCH) {
+    if (signal.aborted) return
+
+    const batch = await Promise.allSettled(
+      ids.slice(i, i + BATCH).map(async (id) => {
+        const message = await emailService.getMessageByID(id, { format: 'full' }, signal)
+        if (signal.aborted) return
+        return message
+      })
+    )
+
+    const settled = batch
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => (r as PromiseFulfilledResult<Message>).value)
+      .flat()
+
+    results.push(...settled)
+    emails.value = [...results].sort((a, b) =>
+      new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
+    )
+  }
+}
 
 const stats = computed(() => ({
   total:       totalMessage.value,
   phishing:    spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase()).length,
   marketing:   spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()).length,
   promotional: spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase()).length,
-  bulk:        spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.BULK.toLowerCase()).length,
+  benign:      spams.value.filter(s => s.spam_type?.toLowerCase() === SpamType.BENIGN.toLowerCase()).length,
   other:       spams.value.filter(s => s.spam_type && !spamTypeValues.includes(s.spam_type.toLowerCase())).length,
   threats:     spams.value.filter(s => s.is_threat).length,
 }))
@@ -121,9 +158,9 @@ const canNext    = computed(() =>
 const getSpamBadge = (spam: SpamResponse | null) => {
   if (!spam) return null
   if (spam.spam_type?.toLowerCase() === SpamType.PHISHING.toLowerCase())       return { label: 'Phishing',    color: 'red'    }
-  if (spam.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()) return { label: 'Marketing',   color: 'amber'  }
-  if (spam.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase())    return { label: 'Promotional', color: 'green'  }
-  if (spam.spam_type?.toLowerCase() === SpamType.BULK.toLowerCase())           return { label: 'Bulk',        color: 'blue'   }
+  if (spam.spam_type?.toLowerCase() === SpamType.SPAM_MARKETING.toLowerCase()) return { label: 'Marketing',   color: 'yellow'  }
+  if (spam.spam_type?.toLowerCase() === SpamType.BENIGN.toLowerCase())         return { label: 'Benign',        color: 'green'   }
+  if (spam.spam_type?.toLowerCase() === SpamType.PROMOTIONAL.toLowerCase())    return { label: 'Promotional', color: 'blue'  }
   if (spam.spam_type && !spamTypeValues.includes(spam.spam_type.toLowerCase())) return { label: 'Other',       color: 'gray'   }
   if (spam.is_threat)                                                          return { label: 'Threat',      color: 'orange' }
   return { label: 'Spam', color: 'gray' }
@@ -162,7 +199,6 @@ const fetchEmails = async (pageToken = '') => {
     if (response.nextPageToken && !stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-
     emails.value = response.messages
 
     const res = await databaseService.get_spam()
@@ -247,9 +283,9 @@ onMounted(() => {
         <div v-for="stat in [
           { label: 'Total',     value: stats.total,       color: 'text-gray-500'   },
           { label: 'Phishing',  value: stats.phishing,    color: 'text-red-500'    },
-          { label: 'Marketing', value: stats.marketing,   color: 'text-amber-500'  },
-          { label: 'Promo',     value: stats.promotional, color: 'text-green-500'  },
-          { label: 'Bulk',      value: stats.bulk,        color: 'text-blue-500'   },
+          { label: 'Marketing', value: stats.marketing,   color: 'text-yellow-500'  },
+          { label: 'Benign',    value: stats.benign,      color: 'text-green-500'   },
+          { label: 'Promo',     value: stats.promotional, color: 'text-blue-500'  },
           { label: 'Other',     value: stats.other,       color: 'text-gray-500'   },
           { label: 'Threats',   value: stats.threats,     color: 'text-orange-500' },
         ]" :key="stat.label"
@@ -264,7 +300,7 @@ onMounted(() => {
 
       <div class="flex items-center gap-1.5 overflow-x-auto">
         <button v-for="f in filters" :key="f.key"
-          @click="activeFilter = f.key; selectedEmail = null"
+          @click="activeFilter = f.key; selectedEmail = null; filteredEmails()" 
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border"
           :class="activeFilter.toLowerCase() === f.key.toLowerCase()
             ? (darkMode ? 'bg-red-900/30 text-red-400 border-red-700/40' : 'bg-red-50 text-red-600 border-red-200')
@@ -283,13 +319,13 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between px-4 py-2 border-b"
           :class="darkMode ? 'border-gray-800' : 'border-gray-100'">
-          <div class="flex items-center gap-1">
+          <div v-if="activeFilter === 'all'" class="flex items-center gap-1">
             <button @click="prevPage" :disabled="!canPrev || uiStore.isLoading"
               class="p-1 rounded transition-colors disabled:opacity-30"
               :class="darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'">
               <ChevronLeft :size="14" />
             </button>
-            <span class="text-xs px-1" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+            <span  class="text-xs px-1" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
               {{ currentPage + 1 }} / {{ totalPages }}
             </span>
             <button @click="nextPage" :disabled="!canNext || uiStore.isLoading"
@@ -298,9 +334,14 @@ onMounted(() => {
               <ChevronRight :size="14" />
             </button>
           </div>
+          <div v-else class="flex items-center gap-1">
+            <span class="text-xs px-1" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
+              {{ emails.length }} emails
+            </span>
+          </div>
         </div>
 
-        <div v-if="!uiStore.isLoading && filteredEmails.length === 0"
+        <div v-if="!uiStore.isLoading && emails.length === 0"
           class="flex-1 flex flex-col items-center justify-center gap-3 select-none">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
             :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
@@ -312,7 +353,7 @@ onMounted(() => {
         </div>
 
         <div class="flex-1 overflow-y-auto">
-          <div v-for="email in filteredEmails" :key="email.id"
+          <div v-for="email in emails" :key="email.id"
             @click="selectedEmail = email"
             class="px-4 py-3 border-b border-l-4 cursor-pointer transition-all"
             :class="[
@@ -428,7 +469,12 @@ onMounted(() => {
               <p v-if="selectedSpam.summary"
                 class="text-sm leading-relaxed"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                {{ selectedSpam.summary }}
+                {{ selectedSpam.summary}}
+              </p>
+              <p v-else
+                class="text-sm leading-relaxed"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                No summary available
               </p>
 
               <div class="grid grid-cols-2 gap-3">

@@ -1,8 +1,8 @@
 export enum SpamType {
     PHISHING = 'Phishing',
+    SPAM_MARKETING = 'Spam_Marketing',
+    BENIGN = 'Benign',
     PROMOTIONAL = 'Promotional',
-    BULK = 'Bulk',
-    SPAM_MARKETING = 'Spam Marketing',
     OTHER = 'Other'
 }
 

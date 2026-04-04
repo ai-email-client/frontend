@@ -32,6 +32,7 @@ const saveError = ref<string | null>(null)
 const isSaving = ref(false)
 const isSending = ref(false)
 const isAiLoading = ref(false)
+const isInitializing = ref(false)
 
 const MAX_HISTORY = 20
 const bodyHistory = ref<string[]>([])
@@ -117,14 +118,30 @@ const isFormValid = computed(() => (draft.value?.to?.length ?? 0) > 0)
 
 const getCombinedHtmlContent = (): string => {
   if (!draft.value) return ''
+
   let content = draft.value.body
+
   if (draft.value.quotedBody) {
     let cleanQuote = draft.value.quotedBody
-    if (content.trim() === '' || content === '<br>') return cleanQuote
     cleanQuote = cleanQuote.replace(/^(?:<br\s*\/?>\s*)+/i, '')
-    content += '<br><br>' + cleanQuote
+
+    if (content.trim() === '' || content === '<br>') {
+      content = cleanQuote
+    } else {
+      content += '<br><br>' + cleanQuote
+    }
   }
-  return content
+
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+    ${content}
+  </body>
+</html>`
 }
 
 const handleFileSelect = async (event: Event) => {
@@ -176,7 +193,6 @@ const saveDraft = async (force = false) => {
       in_reply_to: draft.value.in_reply_to || undefined,
       references: draft.value.references || undefined,
       attachments: existingAttachments.value,
-      
     }
 
     if (draft.value.draftId) {
@@ -188,7 +204,6 @@ const saveDraft = async (force = false) => {
         if (res.message?.threadId) draft.value.threadId = res.message.threadId
       }
     }
-
 
     lastSavedContent.value = currentContentKey.value
     lastSavedAt.value = new Date()
@@ -219,7 +234,7 @@ const sendEmail = async () => {
 }
 
 const sendToDify = async () => {
-  if (!draft.value?.body || isAiLoading.value) return
+  if (!draft.value || isAiLoading.value) return
   isAiLoading.value = true
   pushHistory(draft.value.body)
   try {
@@ -248,18 +263,26 @@ const discardDraft = async () => {
   if (!confirm('Discard this draft?')) return
   if (draft.value?.draftId) await emailService.deleteDraft(draft.value.draftId)
   composerStore.closeComposer()
-  await nextTick()                
+  await nextTick()
   composerStore.triggerRefresh()
 }
 
 let autoSaveTimeout: ReturnType<typeof setTimeout>
 
+const scheduleSave = (delay = 3000) => {
+  if (isInitializing.value) return 
+  clearTimeout(autoSaveTimeout)
+  autoSaveTimeout = setTimeout(() => saveDraft(), delay)
+}
+
 watch(
-  () => [draft.value?.to.join(','), draft.value?.cc.join(','), draft.value?.bcc.join(','), draft.value?.subject],
-  () => {
-    clearTimeout(autoSaveTimeout)
-    autoSaveTimeout = setTimeout(() => saveDraft(), 2000)
-  }
+  () => [
+    draft.value?.to.join(','),
+    draft.value?.cc.join(','),
+    draft.value?.bcc.join(','),
+    draft.value?.subject,
+  ],
+  () => scheduleSave(2000)
 )
 
 let historyTimeout: ReturnType<typeof setTimeout>
@@ -270,12 +293,9 @@ watch(
     if (newVal === oldVal || newVal === undefined) return
 
     clearTimeout(historyTimeout)
-    historyTimeout = setTimeout(() => {
-      pushHistory(newVal)
-    }, 1000)
+    historyTimeout = setTimeout(() => pushHistory(newVal), 1000)
 
-    clearTimeout(autoSaveTimeout)
-    autoSaveTimeout = setTimeout(() => saveDraft(), 3000)
+    scheduleSave(3000)
   }
 )
 
@@ -299,10 +319,12 @@ watch(
   () => composerStore.activeComposer,
   (newComposer) => {
     if (!newComposer) return
+
+    isInitializing.value = true   
+
     bodyHistory.value = [newComposer.body ?? '']
     historyIndex.value = 0
     lastSavedAt.value = null
-    lastSavedContent.value = ''
     saveError.value = null
 
     if (newComposer.type === 'edit' && newComposer.message?.attachments?.length) {
@@ -312,6 +334,11 @@ watch(
     }
 
     syncEditorContent()
+
+    nextTick(() => {
+      lastSavedContent.value = currentContentKey.value
+      isInitializing.value = false
+    })
   },
   { immediate: true }
 )
@@ -408,16 +435,6 @@ onBeforeUnmount(() => {
             {{ showCcBcc ? 'Hide Cc/Bcc' : 'Cc/Bcc' }}
           </button>
         </div>
-
-        <!-- <div v-if="draft.to.length > 0" class="flex flex-wrap gap-1 pb-1 pl-16">
-          <span
-            v-for="addr in draft.to"
-            :key="addr"
-            class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-medium"
-          >
-            {{ addr }}
-          </span>
-        </div> -->
 
         <div v-if="recipientWarning" class="flex items-center gap-1.5 pl-16 pb-1 text-[11px] text-amber-600">
           <AlertCircle :size="12" />
@@ -559,7 +576,7 @@ onBeforeUnmount(() => {
 
           <button
             @click="sendToDify"
-            :disabled="!draft.body || isAiLoading"
+            :disabled="!draft || isAiLoading"
             class="flex items-center gap-2 bg-white hover:bg-purple-50 text-purple-600 border border-purple-100 px-5 py-3 rounded-2xl text-base font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50"
           >
             <Loader2 v-if="isAiLoading" :size="16" class="animate-spin text-purple-400" />

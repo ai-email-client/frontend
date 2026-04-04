@@ -62,14 +62,16 @@ export default {
     },
     async get_message_by_id(
         id: string,
-        param: MessageParam
+        param: MessageParam,
+        signal?: AbortSignal
     ) {
         try {
             const response = await api.get<any>(`/email/message/${id}`,{
                 params: param,
                 paramsSerializer: {
                     indexes: null 
-                }
+                },
+                signal
             })
 
             return response.data

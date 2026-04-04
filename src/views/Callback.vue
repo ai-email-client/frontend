@@ -9,16 +9,13 @@ const statusMessage = ref('')
 const isError = ref(false)
 
 const saveTokenAndRedirect = (token: string) => {
-  if (window.opener) {
-    window.opener.postMessage(
-      { type: 'oauth-success', token },
-      window.location.origin
-    )
-    window.close()
-  } else {
+    localStorage.setItem('oauth_result', JSON.stringify({ status: 'success', token }))
     localStorage.setItem('jwt_token', token)
-    router.replace('/inbox')
-  }
+    
+    if (window.name === 'oauth-popup') {
+        window.opener.postMessage({ type: 'oauth-success', token }, '*')
+        window.close()
+    }
 }
 
 onMounted(async () => {

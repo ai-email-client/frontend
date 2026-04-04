@@ -167,6 +167,11 @@ export interface OverviewResponse {
     level:  string
     reason: string
   } | null
+  instructions: string[] | null
+  required_items: string[] | null
+  date: string | null
+  time: string | null
+  location: string | null
 }
 
 export interface SpamResponse {

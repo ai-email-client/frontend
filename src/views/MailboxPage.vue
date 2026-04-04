@@ -71,9 +71,11 @@ const labels = computed(() => {
 
 const limit             = 20
 const query             = ''
-const includeSpamTrash  = false
 const format            = 'full'
 const metadataHeaders   : string[] = []
+const includeSpamTrash = computed(() =>
+  (route.meta.includeSpamTrash as boolean) ?? false
+)
 
 const nextPageToken   = ref<string | null>(null)
 const stackToken      = ref<string[]>([""])
@@ -119,7 +121,7 @@ const nextPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash,
+      includeSpamTrash.value,
       format,
       metadataHeaders
   )
@@ -134,7 +136,7 @@ const prevPage = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash,
+      includeSpamTrash.value,
       format,
       metadataHeaders
   )
@@ -198,7 +200,7 @@ const handleTrashEmail = async () => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash,
+      includeSpamTrash.value,
       format,
       metadataHeaders
     )
@@ -214,7 +216,7 @@ onMounted(() => {
       limit,
       stackToken.value[currentPage.value],
       query,
-      includeSpamTrash,
+      includeSpamTrash.value,
       format,
       metadataHeaders
     )
@@ -229,7 +231,7 @@ watch(
     currentPage.value = 0
     totalMessage.value = 1
     getTotalMessage()
-    fetchEmails(labels.value, limit, '', query, includeSpamTrash, format, metadataHeaders)
+    fetchEmails(labels.value, limit, '', query, includeSpamTrash.value, format, metadataHeaders)
     
   }
 )
