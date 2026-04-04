@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   formatSize,
-  getLabel,
   formatDateTime,
   getFirstCharacter,
   downloadAttachment
@@ -15,13 +14,12 @@ import {
 
 import {
   Reply, Forward, Trash2,
-  Clock, Tag, Paperclip,
+  Clock, Paperclip,
   File, Download, FileCode, FileText,
   Mail
 } from 'lucide-vue-next'
 
 import EmailShadow from './EmailShadow.vue'
-import { useLabelStore } from '../stores/categoryStore'
 import { useSummaryStore } from '../stores/summaryStore'
 import { Attachment, Message } from '../interface/email';
 import emailService from '../services/email';
@@ -36,7 +34,6 @@ const props = defineProps<{
 }>()
 
 const showHtml = ref(true)
-const labelStore = useLabelStore()
 const summaryStore = useSummaryStore()
 
 const emailSummary = computed(() => {
@@ -348,17 +345,6 @@ defineEmits(['sendEmail', 'archiveEmail', 'trashEmail', 'replyEmail', 'forwardEm
                   :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                 >
                   &lt;{{ email.sender?.email }}&gt;
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-1.5 mt-1">
-                <span
-                  v-for="(label, index) in labelStore.getLabelByIds(getLabel(email.labelIds || []))"
-                  :key="index"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-black/5"
-                  :style="{ backgroundColor: label?.color?.backgroundColor, color: label?.color?.textColor }"
-                >
-                  <Tag class="w-2.5 h-2.5 opacity-70" />
-                  {{ label?.name }}
                 </span>
               </div>
             </div>

@@ -4,7 +4,8 @@ import {
   Inbox, RotateCw, Sparkles,
   ChevronLeft, ChevronRight,
   AlertTriangle, ArrowUpRight,
-  Clock, Mail, Flame, TrendingUp, Minus
+  Clock, Mail, Flame, TrendingUp, Minus,
+  CheckCircle
 } from 'lucide-vue-next'
 import { formatDateTime, formatTimeAgo, getFirstCharacter } from '../utils'
 import emailService from '../services/email'
@@ -14,6 +15,7 @@ import Divider from '../components/Divider.vue'
 import type { Message } from '../interface/email'
 import databaseService from '../services/database'
 import { OverviewResponse } from '../interface/response'
+import { useComposerStore } from '../stores/composerStore'
 
 const props = defineProps<{
   darkMode: boolean
@@ -22,6 +24,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:listWidth'])
 
 const uiStore      = useUiStore()
+const composerStore = useComposerStore()
 
 const emails        = ref<Message[]>([])
 const overviews     = ref<OverviewResponse[]>([])
@@ -242,6 +245,36 @@ const getTotalMessage = async () => {
     const response = await emailService.getLabelById('INBOX')
     if (response.messagesUnread) totalMessage.value = response.messagesUnread
   } catch {}
+}
+
+const handleOpenReplyComposer = () => {
+  composerStore.openComposer('reply', null, selectedEmail.value)
+}
+
+const markAsSpam = async (email: Message) => {
+  try {
+    await emailService.messageModify({
+      id: email.id,
+      addLabelIds: ['SPAM']
+    })
+    email.labelIds = email.labelIds?.filter(id => id !== 'SPAM') || []
+    await fetchEmails()
+  } catch (error) {
+    console.error('make_spam error:', error)
+  }
+}
+
+const markAsRead = async (email: Message) => {
+  try {
+    await emailService.messageModify({
+      id: email.id,
+      removeLabelIds: ['UNREAD']
+    })
+    email.labelIds = email.labelIds?.filter(id => id !== 'UNREAD') || []
+    await fetchEmails()
+  } catch (error) {
+    console.error('mark_as_read error:', error)
+  }
 }
 
 onMounted(() => {
@@ -596,15 +629,27 @@ onMounted(() => {
           <div class="flex gap-3 pt-2 pb-10 border-t"
             :class="darkMode ? 'border-gray-700/40' : 'border-gray-100'">
             <button
-              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              @click="handleOpenReplyComposer">
               <Mail :size="14" /> Reply
             </button>
             <button
               class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+              :disabled="selectedEmail.labelIds?.includes('SPAM')"
+              @click="markAsSpam(selectedEmail)"
               :class="darkMode
                 ? 'border-gray-700 text-gray-400 hover:bg-gray-800'
                 : 'border-gray-200 text-gray-500 bg-white hover:bg-gray-50'">
               <AlertTriangle :size="14" /> Mark Spam
+            </button>
+
+            <button
+              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+              @click="markAsRead(selectedEmail)"
+              :class="darkMode
+                ? 'border-gray-700 text-gray-400 hover:bg-gray-800'
+                : 'border-gray-200 text-gray-500 bg-white hover:bg-gray-50'">
+              <CheckCircle :size="14" /> Mark Read
             </button>
           </div>
         </div>
