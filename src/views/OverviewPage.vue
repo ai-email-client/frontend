@@ -6,15 +6,12 @@ import {
   AlertTriangle, ArrowUpRight,
   Clock, Mail, Flame, TrendingUp, Minus
 } from 'lucide-vue-next'
-import { formatTimeAgo, getFirstCharacter } from '../utils'
+import { formatDateTime, formatTimeAgo, getFirstCharacter } from '../utils'
 import emailService from '../services/email'
-import { useSummaryStore } from '../stores/summaryStore'
 import { useUiStore } from '../stores/uiStore'
-import difyService from '../services/dify'
 import EmailShadow from '../components/EmailShadow.vue'
 import Divider from '../components/Divider.vue'
 import type { Message } from '../interface/email'
-import type { DifySummary } from '../interface/dify'
 import databaseService from '../services/database'
 import { OverviewResponse } from '../interface/response'
 
@@ -24,7 +21,6 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['update:listWidth'])
 
-const summaryStore = useSummaryStore()
 const uiStore      = useUiStore()
 
 const emails        = ref<Message[]>([])
@@ -134,28 +130,62 @@ const importanceConfig: Record<string, {
 }
 
 const getImportance = (emailId: string): string | null => {
-  const s = summaryStore.getSummary(emailId)
-  if (!s || s === 'processing' || s === 'error') return null
-  return (s as DifySummary).importance?.level?.toLowerCase() ?? null
+  const overview = overviews.value.find(o => o.msg_id === emailId)
+  return overview?.importance?.level?.toLowerCase() ?? null
 }
 
 const getImportanceConfig = (level: string | null) =>
   level ? importanceConfig[level] ?? null : null
 
-const selectedSummary = computed((): DifySummary | null => {
+const selectedSummary = computed(() => {
   if (!selectedEmail.value) return null
-  const s = summaryStore.getSummary(selectedEmail.value.id)
-  if (!s || s === 'processing' || s === 'error') return null
-  return s as DifySummary
+  const overview = overviews.value.find(o => o.msg_id === selectedEmail.value?.id)
+  return overview
 })
 
-const filteredEmails = computed(() => {
-  return emails.value.filter(email => {
-    if (activeFilter.value === 'all') return true
-    const level = getImportance(email.id)
-    return level === activeFilter.value
-  })
-})
+let abortController: AbortController | null = null
+const BATCH = 1
+
+const filteredEmails = async () => {
+  abortController?.abort()
+  abortController = new AbortController()
+  const signal = abortController.signal
+
+  emails.value = []
+
+  if (activeFilter.value === 'all') {
+    await fetchEmails()
+    return
+  }
+
+  const ids = overviews.value
+    .filter(e => e.importance?.level?.toLowerCase() === activeFilter.value)
+    .map(e => e.msg_id)
+
+  const results: Message[] = []
+
+  for (let i = 0; i < ids.length; i += BATCH) {
+    if (signal.aborted) return
+
+    const batch = await Promise.allSettled(
+      ids.slice(i, i + BATCH).map(async (id) => {
+        const message = await emailService.getMessageByID(id, { format: 'full' }, signal)
+        if (signal.aborted) return
+        return message
+      })
+    )
+
+    const settled = batch
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => (r as PromiseFulfilledResult<Message>).value)
+      .flat()
+
+    results.push(...settled)
+    emails.value = [...results].sort((a, b) =>
+      new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
+    )
+  }
+}
 
 const stats = computed(() => ({
   total:  overviews.value.length,
@@ -182,55 +212,14 @@ const fetchEmails = async (pageToken = '') => {
     if (response.nextPageToken && !stackToken.value.includes(response.nextPageToken)) {
       stackToken.value.push(response.nextPageToken)
     }
-    summaryStore.pruneByIds(response.messages.map(e => e.id))
     emails.value = response.messages
-    fetchOverview(response.messages)
+
+    const res = await databaseService.get_overview()
+    overviews.value = res
   } catch (error) {
     console.error('fetchEmails error:', error)
   } finally {
     uiStore.setLoading(false)
-  }
-}
-
-const fetchOverview = async (msgs: Message[]) => {
-  if (!msgs.length) return
-
-  try {
-    const res: OverviewResponse[] = await databaseService.get_overview()
-
-    overviews.value = res
-
-    const overviewMap = new Map(res.map(item => [item.msg_id, item]))
-
-    msgs.forEach(email => {
-      const item = overviewMap.get(email.id)
-
-      if (item) {
-        summaryStore.setSummary(email.id, {
-          summary:        item.summary,
-          importance:     item.importance,
-          email_category: item.email_category,
-          sender:         item.sender,
-        } as DifySummary)
-      } else {
-        difyService.getSummaryBatch({
-          emails: [{
-            msg_id:     email.id,
-            email_tags: email.labelIds       || [],
-            sender:     email.sender?.email  || '',
-            text_plain: (email.text_plain || email.text_html || ''),
-          }]
-        })
-          .then((batchRes: any) => {
-            const results = batchRes?.results ?? batchRes
-            results.forEach((r: any) => {
-              if (r.status === 'done' && r.data) summaryStore.setSummary(r.msg_id, r.data)
-            })
-          })
-      }
-    })
-  } catch (e) {
-    msgs.forEach(email => summaryStore.setSummary(email.id, 'error'))
   }
 }
 
@@ -310,7 +299,7 @@ onMounted(() => {
       <!-- Filter tabs -->
       <div class="flex items-center gap-1.5 overflow-x-auto">
         <button v-for="f in importanceLevels" :key="f.key"
-          @click="activeFilter = f.key; selectedEmail = null"
+          @click="activeFilter = f.key; selectedEmail = null; filteredEmails()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border"
           :class="activeFilter === f.key
             ? (darkMode ? 'bg-blue-900/30 text-blue-400 border-blue-700/40' : 'bg-blue-50 text-blue-600 border-blue-200')
@@ -328,7 +317,7 @@ onMounted(() => {
         class="flex-col overflow-hidden transition-none"
         :class="showViewer ? 'hidden md:flex' : 'flex'"
       >
-        <div class="flex items-center justify-between px-4 py-2 border-b"
+        <div v-if=" activeFilter == 'all'" class="flex items-center justify-between px-4 py-2 border-b"
           :class="darkMode ? 'border-gray-800' : 'border-gray-100'">
           <div class="flex items-center gap-1">
             <button @click="prevPage" :disabled="!canPrev || uiStore.isLoading"
@@ -349,8 +338,14 @@ onMounted(() => {
             {{ stats.total }}
           </span>
         </div>
+        <div v-else class="flex items-center justify-between px-4 py-2 border-b"
+          :class="darkMode ? 'border-gray-800' : 'border-gray-100'">
+          <span class="text-xs" :class="darkMode ? 'text-gray-600' : 'text-gray-400'">
+            {{ stats[activeFilter as keyof typeof stats] }}
+          </span>
+        </div>
 
-        <div v-if="!uiStore.isLoading && filteredEmails.length === 0"
+        <div v-if="!uiStore.isLoading && emails.length === 0"
           class="flex-1 flex flex-col items-center justify-center gap-3 select-none">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
             :class="darkMode ? 'bg-gray-800' : 'bg-gray-100'">
@@ -362,7 +357,7 @@ onMounted(() => {
         </div>
 
         <div class="flex-1 overflow-y-auto">
-          <div v-for="email in filteredEmails" :key="email.id"
+          <div v-for="email in emails" :key="email.id"
             @click="selectedEmail = email"
             class="px-4 py-3 border-b border-l-4 cursor-pointer transition-all group"
             :class="[
@@ -421,18 +416,7 @@ onMounted(() => {
                 <div class="flex items-start justify-between gap-2">
                   <p class="text-[11px] line-clamp-2 flex-1"
                     :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
-                    <template v-if="summaryStore.getSummary(email.id) === 'processing'">
-                      <span class="flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse inline-block" />
-                        Analyzing...
-                      </span>
-                    </template>
-                    <template v-else-if="summaryStore.getSummary(email.id) && summaryStore.getSummary(email.id) !== 'error'">
-                      {{ (summaryStore.getSummary(email.id) as DifySummary)?.summary || email.snippet }}
-                    </template>
-                    <template v-else>
-                      {{ email.snippet }}
-                    </template>
+                    {{ email.snippet }}
                   </p>
 
                   <!-- Importance badge -->
@@ -589,7 +573,7 @@ onMounted(() => {
             <div class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full shrink-0"
               :class="darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'">
               <Clock :size="11" />
-              {{ formatTimeAgo(selectedEmail.date || '') }}
+              {{ formatDateTime(selectedEmail.date || '') }}
             </div>
           </div>
 

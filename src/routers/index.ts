@@ -16,7 +16,7 @@ const routes = [
         path: '/inbox',
         name: 'Inbox',
         component: () => import('../views/MailboxDifyPage.vue'),
-        meta: { labels: ['INBOX'], includeSpamTrash: false }
+        meta: { labels: ['INBOX'], includeSpamTrash: true }
     },
     {
         path: '/draft',

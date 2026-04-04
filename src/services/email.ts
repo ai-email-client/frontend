@@ -67,7 +67,8 @@ const emailService = {
     },
     getMessageByID: async (
         msgId: string,
-        param: MessageParam
+        param: MessageParam,
+        signal?: AbortSignal
     ): Promise<Message> => {
         if (!msgId) {
             throw new Error('Message ID is required')
@@ -75,7 +76,8 @@ const emailService = {
 
         const data = await emailAPI.get_message_by_id(
             msgId,
-            param
+            param,
+            signal
         )
 
         if (!data) {

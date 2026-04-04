@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  Search,
   PenSquare,
   RotateCw,
   ChevronLeft,
@@ -137,7 +136,7 @@ const emit = defineEmits([
           </button>
         </div>
 
-        <div class="relative">
+        <!-- <div class="relative">
           <Search
             class="absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
             :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
@@ -151,7 +150,7 @@ const emit = defineEmits([
               ? 'bg-gray-900 border-gray-800 text-gray-200 placeholder-gray-600 focus:bg-gray-900'
               : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:bg-white'"
           />
-        </div>
+        </div> -->
       </div>
       <div class="flex-1 overflow-y-auto custom-scrollbar">
         <div
@@ -222,13 +221,14 @@ const emit = defineEmits([
                   <div class="flex items-center gap-1.5 overflow-hidden">
                     <span
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-black/5 dark:border-white/10"
-                      :style="{
-                        backgroundColor: labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.backgroundColor,
-                        color: labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.textColor
-                      }"
                     >
-                      <Tag class="w-3 h-3 opacity-70" v-if="!email.labelIds?.includes('DRAFT') && !email.labelIds?.includes('SENT')"/>
-                      <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.name }}</span>
+                    <Tag 
+                      class="w-3 h-3 opacity-70"
+                      :color="labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.textColor || '#000000'"
+                      :fill="labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.color?.backgroundColor || '#ffffff'"
+                      v-if="!email.labelIds?.includes('DRAFT') && !email.labelIds?.includes('SENT')"
+                    />                      
+                    <span class="truncate max-w-[80px]">{{ labelStore.getLabelById(getLabel(email.labelIds || [])[0])?.name }}</span>
                     </span>
                   </div>
                 </div>
@@ -271,25 +271,7 @@ const emit = defineEmits([
                 </span>
                 <template v-else-if="summaryStore.getSummary(email.id) && summaryStore.getSummary(email.id) !== 'error'">
                   <span
-                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.email_category"
-                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
-                    :class="darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'"
-                  >
-                    {{ (summaryStore.getSummary(email.id) as DifySummary)?.email_category?.toLowerCase() }}
-                  </span>
-                  <span
-                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.importance?.level"
-                    class="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
-                    :class="{
-                      'bg-red-100 text-red-500':    (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
-                      'bg-yellow-100 text-yellow-600': (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
-                      'bg-green-100 text-green-600':  (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level?.toLowerCase(),
-                    }"
-                  >
-                    {{ (summaryStore.getSummary(email.id) as DifySummary)?.importance?.level }}
-                  </span>
-                  <span
-                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.is_spam"
+                    v-if="(summaryStore.getSummary(email.id) as DifySummary)?.is_spam || email.labelIds?.includes('SPAM')"
                     class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-500"
                   >
                     Spam
